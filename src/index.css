@@ -1,0 +1,146 @@
+@import "tailwindcss";
+
+@theme {
+  /* NIVARAN Light-First Institutional Palette */
+  --color-bg-primary: #F7F8FA;
+  --color-bg-secondary: #F1F3F5;
+  --color-bg-tertiary: #E9ECEF;
+  
+  --color-surface: #FFFFFF;
+  --color-surface-elevated: #F8FAFC;
+  --color-surface-subtle: #F1F4F7;
+  --color-surface-border: #DDE2E7;
+  --color-surface-border-active: #B5BFC9;
+
+  /* Primary Brand: Deep Forest Emerald / Institutional Green */
+  --color-brand-primary: #176B5B;
+  --color-brand-hover: #125547;
+  --color-brand-soft: #E7F3EF;
+
+  /* Secondary Accent: Institutional Slate Blue */
+  --color-brand-blue: #3E6F8F;
+  --color-brand-blue-soft: #EAF1F6;
+
+  /* Semantic Alerts */
+  --color-brand-amber: #B7791F;
+  --color-brand-amber-soft: #FFF4DC;
+  
+  --color-brand-red: #C84A4A;
+  --color-brand-red-soft: #FDECEC;
+
+  --color-brand-green: #287A52;
+  --color-brand-green-soft: #E9F6EF;
+
+  /* Typography Colors */
+  --color-text-primary: #17202A;
+  --color-text-secondary: #586574;
+  --color-text-muted: #7A8794;
+
+  /* Fonts */
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Manrope', 'Inter', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+
+  /* Corner Radius */
+  --radius-card: 14px;
+  --radius-card-lg: 16px;
+  --radius-btn: 10px;
+  --radius-input: 10px;
+
+  /* Subtle, institutional shadows */
+  --shadow-subtle: 0 1px 3px 0 rgba(23, 32, 42, 0.04), 0 1px 2px -1px rgba(23, 32, 42, 0.03);
+  --shadow-card: 0 2px 8px 0 rgba(23, 32, 42, 0.05), 0 1px 2px 0 rgba(23, 32, 42, 0.03);
+  --shadow-card-hover: 0 4px 16px 0 rgba(23, 32, 42, 0.08), 0 2px 4px 0 rgba(23, 32, 42, 0.04);
+  --shadow-dialog: 0 12px 32px -4px rgba(23, 32, 42, 0.12), 0 4px 12px -2px rgba(23, 32, 42, 0.08);
+}
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background-color: #F7F8FA;
+  color: #17202A;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
+  color: #17202A;
+}
+
+code, pre, .font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Custom Scrollbar for clean high-density UI */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F1F3F5;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #176B5B;
+}
+
+/* Accessible, clean focus rings */
+:focus-visible {
+  outline: 2px solid #176B5B;
+  outline-offset: 2px;
+}
+
+/* Accessibility: Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Text wrap & overflow protections */
+.break-anywhere {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
+}
+
+/* Subtle civic grid pattern */
+.bg-civic-grid {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(221, 226, 231, 0.4) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(221, 226, 231, 0.4) 1px, transparent 1px);
+}
+
+/* Print Styles for Official Case Dossier */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+}
