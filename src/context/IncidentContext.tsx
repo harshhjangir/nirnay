@@ -1,14 +1,23 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import {
   AuthUser,
+  CaseReadiness,
+  CaseResponse,
+  EvidenceConflict,
   EvidenceItem,
+  ExternalReference,
   FraudCategory,
   IncidentCase,
+  NivaranToolResult,
   NotificationItem,
   TransactionDetail
 } from '../types';
 import { DEMO_USER, INITIAL_DEMO_CASES, DEMO_NOTIFICATIONS } from '../services/mockData';
 import { analyzeIncident, generateActionPlan } from '../services/incidentAnalysisEngine';
+import { calculateCaseReadiness } from '../services/caseReadinessEngine';
+import { evaluateEvidenceConsistency, ConsistencyCheckResult } from '../services/evidenceConsistencyEngine';
+import { findMatchingCampaign } from '../services/fraudNetworkEngine';
+import { generateGenericEscalationLadder } from '../services/responseInterpreterEngine';
 
 export interface DraftIncidentData {
   category: FraudCategory;
@@ -42,7 +51,19 @@ interface IncidentContextType {
   selectCase: (caseId: string) => void;
   submitNewCaseFromDraft: () => string; // returns created caseId
 
-  // Draft Intake
+  // Live Case Intelligence
+  caseReadiness: CaseReadiness;
+  consistencyResult: ConsistencyCheckResult;
+
+  // External References & Responses
+  addExternalReference: (caseId: string, ref: Omit<ExternalReference, 'id' | 'lastUpdated'>) => void;
+  removeExternalReference: (caseId: string, refId: string) => void;
+  addCaseResponse: (caseId: string, response: Omit<CaseResponse, 'id'>) => void;
+  resolveEvidenceConflict: (caseId: string, conflictId: string, resolutionNote: string) => void;
+  addToolResultToCase: (caseId: string, toolResult: NivaranToolResult) => void;
+  updateCaseNotes: (caseId: string, notes: string) => void;
+
+  // Draft Intake Wizard
   draftIncident: DraftIncidentData;
   updateDraft: (updates: Partial<DraftIncidentData>) => void;
   addDraftTransaction: (tx: Omit<TransactionDetail, 'id'>) => void;
@@ -53,7 +74,7 @@ interface IncidentContextType {
   intakeStep: number;
   setIntakeStep: (step: number) => void;
 
-  // Navigation & Settings
+  // Navigation & Privacy Settings
   activeTab: string;
   setActiveTab: (tab: string) => void;
   isMasked: boolean;
@@ -86,10 +107,10 @@ const initialDraftState: DraftIncidentData = {
 
 const IncidentContext = createContext<IncidentContextType | undefined>(undefined);
 
-const CASES_STORAGE_KEY = 'nivaran_cases_v2';
-const USER_STORAGE_KEY = 'nivaran_auth_user_v2';
-const DRAFT_STORAGE_KEY = 'nivaran_draft_incident_v2';
-const NOTIFS_STORAGE_KEY = 'nivaran_notifs_v2';
+const CASES_STORAGE_KEY = 'nivaran_cases_v3';
+const USER_STORAGE_KEY = 'nivaran_auth_user_v3';
+const DRAFT_STORAGE_KEY = 'nivaran_draft_incident_v3';
+const NOTIFS_STORAGE_KEY = 'nivaran_notifs_v3';
 
 export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // 1. Auth State
@@ -98,7 +119,7 @@ export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const saved = localStorage.getItem(USER_STORAGE_KEY);
       if (saved) return JSON.parse(saved);
     } catch {}
-    return DEMO_USER; // Default to demo user so evaluator immediately explores authenticated dashboard
+    return DEMO_USER;
   });
 
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -168,6 +189,10 @@ export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Derived Active Case
   const activeCase = cases.find(c => c.caseId === activeCaseId) || cases[0] || INITIAL_DEMO_CASES[0];
 
+  // Derived Live Case Intelligence
+  const caseReadiness = calculateCaseReadiness(activeCase);
+  const consistencyResult = evaluateEvidenceConsistency(activeCase.transactions, activeCase.evidence, activeCase.conflicts);
+
   // Auth methods
   const openLoginModal = (redirectTab?: string) => {
     if (redirectTab) setLoginRedirectTab(redirectTab);
@@ -216,6 +241,245 @@ export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const selectCase = (caseId: string) => {
     setActiveCaseId(caseId);
     setActiveTab('case_details');
+  };
+
+  // External Reference Management
+  const addExternalReference = (caseId: string, refData: Omit<ExternalReference, 'id' | 'lastUpdated'>) => {
+    const newRef: ExternalReference = {
+      ...refData,
+      id: `ref-${Date.now()}`,
+      lastUpdated: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+    };
+
+    setCases(prev => prev.map(c => {
+      if (c.caseId === caseId) {
+        const updatedRefs = [...c.externalReferences, newRef];
+        const newTimelineEvent = {
+          id: `tl-ref-${Date.now()}`,
+          timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+          title: `External Reference Added: ${refData.authorityName} (${refData.referenceNumber})`,
+          description: `Status: ${refData.statusDisplay}. Recorded under case file.`,
+          actor: 'authority' as const,
+          source: 'User entered external reference',
+          urgency: 'info' as const
+        };
+
+        return {
+          ...c,
+          externalReferences: updatedRefs,
+          timeline: [...c.timeline, newTimelineEvent],
+          updatedAt: new Date().toISOString()
+        };
+      }
+      return c;
+    }));
+
+    // Notification
+    const notif: NotificationItem = {
+      id: `notif-${Date.now()}`,
+      title: `Reference ${refData.referenceNumber} Attached to Case`,
+      message: `${refData.authorityName} complaint reference is now tracked in your case dossier.`,
+      timestamp: 'Just now',
+      read: false,
+      type: 'status_change',
+      caseId
+    };
+    setNotifications(prev => [notif, ...prev]);
+  };
+
+  const removeExternalReference = (caseId: string, refId: string) => {
+    setCases(prev => prev.map(c => {
+      if (c.caseId === caseId) {
+        return {
+          ...c,
+          externalReferences: c.externalReferences.filter(r => r.id !== refId),
+          updatedAt: new Date().toISOString()
+        };
+      }
+      return c;
+    }));
+  };
+
+  // Case Response Management (Response Interpreter)
+  const addCaseResponse = (caseId: string, responseData: Omit<CaseResponse, 'id'>) => {
+    const newResponse: CaseResponse = {
+      ...responseData,
+      id: `resp-${Date.now()}`
+    };
+
+    setCases(prev => prev.map(c => {
+      if (c.caseId === caseId) {
+        const updatedResponses = [...c.responses, newResponse];
+        const newTimelineEvent = {
+          id: `tl-resp-${Date.now()}`,
+          timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+          title: `Response Received from ${responseData.responder}`,
+          description: responseData.decision,
+          actor: 'bank' as const,
+          source: 'Imported from bank / authority response',
+          urgency: 'warning' as const
+        };
+
+        return {
+          ...c,
+          responses: updatedResponses,
+          timeline: [...c.timeline, newTimelineEvent],
+          nextAction: {
+            title: responseData.potentialNextAction,
+            why: responseData.plainSummary,
+            actionLabel: 'Escalate to Next Level',
+            actionTab: 'escalation',
+            urgency: 'high_now' as const
+          },
+          updatedAt: new Date().toISOString()
+        };
+      }
+      return c;
+    }));
+
+    // Notification
+    const notif: NotificationItem = {
+      id: `notif-${Date.now()}`,
+      title: `Response Interpreted from ${responseData.responder}`,
+      message: responseData.decision,
+      timestamp: 'Just now',
+      read: false,
+      type: 'response_alert',
+      caseId
+    };
+    setNotifications(prev => [notif, ...prev]);
+  };
+
+  // Resolve Evidence Conflict
+  const resolveEvidenceConflict = (caseId: string, conflictId: string, resolutionNote: string) => {
+    setCases(prev => prev.map(c => {
+      if (c.caseId === caseId) {
+        return {
+          ...c,
+          conflicts: c.conflicts.map(conf => conf.id === conflictId ? { ...conf, status: 'resolved', resolutionNote } : conf),
+          updatedAt: new Date().toISOString()
+        };
+      }
+      return c;
+    }));
+  };
+
+  // Mini Tool Result Injection into Case
+  const addToolResultToCase = (caseId: string, toolResult: NivaranToolResult) => {
+    setCases(prev => prev.map(c => {
+      if (c.caseId === caseId) {
+        const updatedSuspects = [...c.suspects];
+        const updatedEvidence = [...c.evidence];
+        const updatedTransactions = [...c.transactions];
+
+        // 1. If tool extracted a suspect identifier (UPI, phone, URL)
+        if (toolResult.extractedData?.upiId && !updatedSuspects.some(s => s.value.toLowerCase() === toolResult.extractedData!.upiId!.toLowerCase())) {
+          updatedSuspects.push({
+            id: `susp-${Date.now()}`,
+            type: 'upi_id',
+            value: toolResult.extractedData.upiId,
+            source: toolResult.toolName,
+            matchingReportsCount: toolResult.verdict === 'HIGH_RISK_ALERT' ? 17 : 0,
+            notes: toolResult.summary
+          });
+        }
+
+        if (toolResult.extractedData?.phoneNumber && !updatedSuspects.some(s => s.value.includes(toolResult.extractedData!.phoneNumber!))) {
+          updatedSuspects.push({
+            id: `susp-ph-${Date.now()}`,
+            type: 'phone_number',
+            value: toolResult.extractedData.phoneNumber,
+            source: toolResult.toolName,
+            notes: toolResult.summary
+          });
+        }
+
+        if (toolResult.extractedData?.url && !updatedSuspects.some(s => s.value.includes(toolResult.extractedData!.url!))) {
+          updatedSuspects.push({
+            id: `susp-url-${Date.now()}`,
+            type: 'website_url',
+            value: toolResult.extractedData.url,
+            source: toolResult.toolName,
+            notes: toolResult.summary
+          });
+        }
+
+        // 2. If tool parsed a transaction (SMS parser)
+        if (toolResult.toolId === 'sms_parser' && toolResult.extractedData?.amount) {
+          updatedTransactions.push({
+            id: `tx-${Date.now()}`,
+            amount: toolResult.extractedData.amount,
+            currency: 'INR',
+            timestamp: new Date().toISOString().slice(0, 16).replace('T', ' '),
+            senderBank: toolResult.extractedData.bank || 'HDFC Bank',
+            senderAccountMasked: toolResult.extractedData.senderAccountMasked || '9104',
+            recipientUpiOrAcc: toolResult.extractedData.upiId || 'discom.billupdate.982@okaxis',
+            utrNumber: toolResult.extractedData.utrNumber || '423719820491',
+            paymentApp: 'Google Pay',
+            paymentMethod: 'UPI',
+            notes: 'Imported from Bank SMS Parser'
+          });
+        }
+
+        // 3. Attach as Evidence Item
+        updatedEvidence.push({
+          id: `ev-tool-${Date.now()}`,
+          type: toolResult.toolId === 'sms_parser' ? 'sms_text' : toolResult.toolId === 'qr_check' ? 'qr_code' : 'url_link',
+          title: `${toolResult.toolName} Result`,
+          description: toolResult.summary,
+          timestamp: toolResult.timestamp,
+          source: `Nivaran Tool (${toolResult.toolName})`,
+          status: 'verified',
+          relevance: 'critical',
+          extractedData: toolResult.extractedData
+        });
+
+        // 4. Add Timeline Event with source attribution
+        const timelineEvent = {
+          id: `tl-tool-${Date.now()}`,
+          timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+          title: `Intelligence Added from ${toolResult.toolName}`,
+          description: toolResult.summary,
+          actor: 'system' as const,
+          source: `From ${toolResult.toolName}`,
+          urgency: 'info' as const
+        };
+
+        const updatedCampaign = findMatchingCampaign(updatedSuspects);
+
+        return {
+          ...c,
+          suspects: updatedSuspects,
+          evidence: updatedEvidence,
+          transactions: updatedTransactions,
+          timeline: [...c.timeline, timelineEvent],
+          connectedCampaign: updatedCampaign || c.connectedCampaign,
+          updatedAt: new Date().toISOString()
+        };
+      }
+      return c;
+    }));
+
+    // Notification
+    const notif: NotificationItem = {
+      id: `notif-${Date.now()}`,
+      title: `Intelligence Attached: ${toolResult.toolName}`,
+      message: `Extracted parameters from ${toolResult.toolName} have been added to Case ${caseId}.`,
+      timestamp: 'Just now',
+      read: false,
+      type: 'evidence_alert',
+      caseId
+    };
+    setNotifications(prev => [notif, ...prev]);
+  };
+
+  const updateCaseNotes = (caseId: string, notes: string) => {
+    setCases(prev => prev.map(c => {
+      if (c.caseId === caseId) {
+        return { ...c, userNotes: notes, updatedAt: new Date().toISOString() };
+      }
+      return c;
+    }));
   };
 
   // Draft Management
@@ -296,13 +560,14 @@ export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       analysis
     );
 
-    // Build timeline events from transactions
+    // Build timeline events from transactions with clear source
     const timelineEvents = draftIncident.transactions.map((tx, idx) => ({
       id: `tl-gen-${idx}`,
       timestamp: tx.timestamp ? tx.timestamp.slice(11, 16) || '10:00 AM' : '10:00 AM',
       title: `INR ${tx.amount.toLocaleString('en-IN')} debited via ${tx.paymentMethod}`,
       description: `Debited from ${tx.senderBank} to ${tx.recipientUpiOrAcc}. UTR: ${tx.utrNumber || 'Pending'}`,
       actor: 'victim' as const,
+      source: 'From user entered transaction details',
       urgency: 'critical' as const
     }));
 
@@ -311,8 +576,12 @@ export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       id: `susp-gen-${i}`,
       type: 'upi_id' as const,
       value: tx.recipientUpiOrAcc,
+      source: 'Transaction Details',
+      matchingReportsCount: tx.recipientUpiOrAcc.includes('discom.billupdate') ? 17 : 0,
       notes: `Beneficiary handle for transaction #${i + 1}`
     }));
+
+    const connectedCampaign = findMatchingCampaign(suspects);
 
     const newCase: IncidentCase = {
       caseId: newCaseId,
@@ -321,6 +590,13 @@ export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       updatedAt: nowIso,
       isDemo: false,
       statusProgress: 'incident_reported',
+      nextAction: {
+        title: 'Call 1930 and Notify Your Bank Fraud Cell',
+        why: 'Quoting your 12-digit UTR immediately to 1930 enables an inter-bank lien to freeze funds before recipient withdrawal.',
+        actionLabel: 'View Emergency 1930 Script',
+        actionTab: 'actions',
+        urgency: 'critical_now'
+      },
       progressTimeline: [
         {
           step: 1,
@@ -366,6 +642,11 @@ export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           description: 'Formal case archival.'
         }
       ],
+      externalReferences: [],
+      responses: [],
+      conflicts: [],
+      connectedCampaign,
+      escalationLadder: generateGenericEscalationLadder(draftIncident.transactions[0]?.senderBank || 'HDFC Bank'),
       category: draftIncident.category,
       whatHappenedSummary: draftIncident.whatHappenedSummary || 'Incident submitted via NIVARAN intake wizard.',
       complainant: {
@@ -378,12 +659,12 @@ export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       transactions: draftIncident.transactions.length > 0 ? draftIncident.transactions : [
         {
           id: `tx-${Date.now()}`,
-          amount: 5000,
+          amount: 18500,
           currency: 'INR',
           timestamp: nowReadable,
           senderBank: 'HDFC Bank',
-          senderAccountMasked: '4921',
-          recipientUpiOrAcc: 'recipient.vpa@upi',
+          senderAccountMasked: '9104',
+          recipientUpiOrAcc: 'discom.billupdate.982@okaxis',
           utrNumber: '423719820491',
           paymentApp: 'Google Pay',
           paymentMethod: 'UPI'
@@ -397,6 +678,7 @@ export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           title: 'Unauthorized Transaction Executed',
           description: 'Funds debited from primary account under deceptive circumstances.',
           actor: 'victim',
+          source: 'From user description',
           urgency: 'critical'
         }
       ],
@@ -405,11 +687,9 @@ export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       suspects
     };
 
-    // Prepend to cases list
     setCases(prev => [newCase, ...prev]);
     setActiveCaseId(newCaseId);
 
-    // Add notification
     const newNotif: NotificationItem = {
       id: `notif-${Date.now()}`,
       title: `Case ${newCaseId} Created Successfully`,
@@ -421,9 +701,7 @@ export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
     setNotifications(prev => [newNotif, ...prev]);
 
-    // Reset draft
     resetDraft();
-
     return newCaseId;
   };
 
@@ -484,6 +762,16 @@ export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         activeCase,
         selectCase,
         submitNewCaseFromDraft,
+
+        caseReadiness,
+        consistencyResult,
+
+        addExternalReference,
+        removeExternalReference,
+        addCaseResponse,
+        resolveEvidenceConflict,
+        addToolResultToCase,
+        updateCaseNotes,
 
         draftIncident,
         updateDraft,

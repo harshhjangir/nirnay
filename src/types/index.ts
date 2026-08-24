@@ -53,7 +53,24 @@ export type EvidenceType =
   | 'call_recording'
   | 'url_link'
   | 'apk_file'
+  | 'qr_code'
   | 'email';
+
+export interface EvidenceExtractedData {
+  amount?: number;
+  date?: string;
+  time?: string;
+  utrNumber?: string;
+  upiId?: string;
+  phoneNumber?: string;
+  email?: string;
+  url?: string;
+  bank?: string;
+  merchant?: string;
+  recipient?: string;
+  referenceNumber?: string;
+  senderAccountMasked?: string;
+}
 
 export interface EvidenceItem {
   id: string;
@@ -68,6 +85,17 @@ export interface EvidenceItem {
   fileName?: string;
   contentSnippet?: string;
   fileUrl?: string;
+  extractedData?: EvidenceExtractedData;
+}
+
+export interface EvidenceConflict {
+  id: string;
+  field: string; // e.g. "Disputed Amount", "UTR Number", "Recipient"
+  sourceA: { name: string; value: string }; // e.g. { name: "Bank SMS Alert", value: "₹18,500" }
+  sourceB: { name: string; value: string }; // e.g. { name: "Uploaded Receipt", value: "₹15,500" }
+  status: 'unresolved' | 'resolved';
+  resolutionNote?: string;
+  suggestedAction: string;
 }
 
 export interface TimelineEvent {
@@ -75,7 +103,8 @@ export interface TimelineEvent {
   timestamp: string;
   title: string;
   description: string;
-  actor: 'victim' | 'suspect' | 'system' | 'bank';
+  actor: 'victim' | 'suspect' | 'system' | 'bank' | 'authority';
+  source: string; // e.g. "From uploaded screenshot", "From user description", "User entered", "Imported from bank response"
   urgency?: 'critical' | 'warning' | 'info';
 }
 
@@ -109,6 +138,9 @@ export interface SuspectIdentifier {
   id: string;
   type: 'upi_id' | 'phone_number' | 'bank_account' | 'website_url' | 'apk_name' | 'social_handle';
   value: string;
+  source?: string; // e.g. "Nivaran UPI Check", "WhatsApp Chat Screenshot", "User entered"
+  firstDetected?: string;
+  matchingReportsCount?: number;
   notes?: string;
 }
 
@@ -121,6 +153,127 @@ export interface ComplainantInfo {
   alternatePhone?: string;
 }
 
+// -------------------------------------------------------------
+// EXTERNAL COMPLAINT REFERENCES (Bank, 1930, NCRP, UPI app, etc.)
+// -------------------------------------------------------------
+export type ExternalAuthority =
+  | 'bank'
+  | '1930'
+  | 'ncrp'
+  | 'payment_app'
+  | 'merchant'
+  | 'platform'
+  | 'police'
+  | 'other';
+
+export type ExternalStatus =
+  | 'submitted'
+  | 'acknowledged'
+  | 'awaiting_response'
+  | 'under_review'
+  | 'dispute_raised'
+  | 'rejected'
+  | 'resolved'
+  | 'pending_user_action';
+
+export interface ExternalReference {
+  id: string;
+  authority: ExternalAuthority;
+  authorityName: string; // e.g. "HDFC Bank", "1930 (I4C Helpline)", "cybercrime.gov.in (NCRP)", "Google Pay"
+  referenceNumber: string; // e.g. "HDFC-98127", "CF-728191", "123456789012", "GPay-88429"
+  dateSubmitted: string;
+  status: ExternalStatus;
+  statusDisplay: string; // e.g. "Awaiting response", "Acknowledged", "Submitted"
+  source: string; // e.g. "User entered", "SMS parsed"
+  lastUpdated: string;
+  notes?: string;
+}
+
+// -------------------------------------------------------------
+// CASE READINESS ENGINE (e.g. 7 / 9 items available)
+// -------------------------------------------------------------
+export interface CaseReadinessItem {
+  id: string;
+  label: string;
+  available: boolean;
+  category: 'core_transaction' | 'evidence' | 'official_reference';
+  description: string;
+  actionTab?: string;
+}
+
+export interface CaseReadiness {
+  availableCount: number;
+  totalCount: number;
+  percentage: number;
+  statusMessage: string;
+  items: CaseReadinessItem[];
+}
+
+// -------------------------------------------------------------
+// RESPONSE INTERPRETER (Bank emails, letters, NCRP messages)
+// -------------------------------------------------------------
+export interface CaseResponse {
+  id: string;
+  responder: string; // e.g. "HDFC Bank Fraud Dispute Desk", "NCRP (cybercrime.gov.in)", "Google Pay Support"
+  authority: ExternalAuthority;
+  date: string;
+  referenceNumber?: string;
+  decision: string; // e.g. "Dispute rejected / Transaction classified as customer-authorised"
+  reason: string; // e.g. "Transaction authenticated with 2-factor OTP / UPI PIN"
+  requestedDocuments?: string[];
+  plainSummary: string; // "The bank has treated the transaction as authorised. Your case currently contains evidence that the payment followed an impersonation call."
+  potentialNextAction: string; // "Review the bank's grievance/escalation process."
+  rawText?: string;
+}
+
+// -------------------------------------------------------------
+// ESCALATION TRACKER (Bank Complaint -> Grievance -> Ombudsman)
+// -------------------------------------------------------------
+export interface EscalationStage {
+  stageNumber: number;
+  title: string;
+  authority: string;
+  requiredReference: string;
+  requiredEvidence: string[];
+  waitingPeriodDays?: number;
+  deadlineDate?: string;
+  status: 'completed' | 'in_progress' | 'eligible_next' | 'awaiting_prerequisites';
+  eligibilityCheck: string;
+  description: string;
+}
+
+// -------------------------------------------------------------
+// FRAUD NETWORK INTELLIGENCE (Connected Campaigns)
+// -------------------------------------------------------------
+export interface ConnectedCampaign {
+  id: string;
+  title: string; // e.g. "State Electricity DISCOM Impersonation Campaign"
+  totalReportsCount: number; // e.g. 17 Nivaran reports
+  totalLossEstimate: number; // e.g. 482000
+  commonIndicators: string[]; // ["+91 70192 84920", "discom.billupdate.982@okaxis", "15-minute power cutoff threat script", "₹15 verification credit trick"]
+  status: 'potentially_connected_reports';
+  confidenceNotice: string; // "Probabilistic signal based on matching identifiers across user reports."
+  matchingIdentifiers: string[];
+}
+
+// -------------------------------------------------------------
+// NIVARAN MINI TOOLKIT OUTPUTS
+// -------------------------------------------------------------
+export interface NivaranToolResult {
+  toolId: 'upi_check' | 'phone_check' | 'url_check' | 'payment_request_check' | 'qr_check' | 'sms_parser' | 'call_story_check';
+  toolName: string;
+  timestamp: string;
+  query: string;
+  summary: string;
+  verdict: 'POTENTIAL_RISK_SIGNALS' | 'NO_KNOWN_MATCH' | 'INSUFFICIENT_INFORMATION' | 'HIGH_RISK_ALERT' | 'PARSED_TRANSACTION';
+  extractedData?: EvidenceExtractedData;
+  signals?: Array<{ type: 'warning' | 'info' | 'critical'; label: string; description: string }>;
+  suggestedAction?: string;
+}
+
+// -------------------------------------------------------------
+// CORE CASE DATA MODEL
+// -------------------------------------------------------------
 export interface IncidentCase {
   caseId: string;
   createdAt: string;
@@ -132,14 +285,25 @@ export interface IncidentCase {
   whatHappenedSummary: string;
   transactions: TransactionDetail[];
   evidence: EvidenceItem[];
+  conflicts: EvidenceConflict[];
   timeline: TimelineEvent[];
   analysis: IncidentAnalysis;
   actions: ActionItem[];
   suspects: SuspectIdentifier[];
-  ncrpAckNumber?: string;
-  bankComplaintNumber?: string;
+  externalReferences: ExternalReference[];
+  responses: CaseResponse[];
+  connectedCampaign?: ConnectedCampaign;
+  escalationLadder?: EscalationStage[];
   statusProgress: CaseStatusProgress;
   progressTimeline: StatusTimelineEvent[];
+  nextAction: {
+    title: string;
+    why: string;
+    actionLabel: string;
+    actionTab?: string;
+    urgency: ActionUrgency;
+  };
+  userNotes?: string;
 }
 
 export interface AuthUser {
@@ -157,7 +321,7 @@ export interface NotificationItem {
   message: string;
   timestamp: string;
   read: boolean;
-  type: 'status_change' | 'action_reminder' | 'evidence_alert' | 'system';
+  type: 'status_change' | 'action_reminder' | 'evidence_alert' | 'system' | 'conflict_alert' | 'response_alert';
   caseId?: string;
 }
 
@@ -187,4 +351,7 @@ export interface IdentifierCheckResult {
   }>;
   guidance: string[];
   disclaimer: string;
+  matchingReportsCount?: number;
+  relatedCases?: string[];
+  extractedData?: EvidenceExtractedData;
 }

@@ -14,7 +14,8 @@ import {
   Search,
   Shield,
   User,
-  X
+  X,
+  Zap
 } from 'lucide-react';
 import { useIncident } from '../../context/IncidentContext';
 
@@ -40,6 +41,7 @@ export const Header: React.FC = () => {
     { id: 'intake', label: 'Report Incident', icon: PlusCircle },
     { id: 'track_case', label: 'Track Case', icon: Search },
     { id: 'dashboard', label: 'My Dashboard', count: cases.length },
+    { id: 'tools', label: 'Nivaran Tools', icon: Zap },
     { id: 'learn', label: 'Learn & Prevent', icon: HelpCircle },
     { id: 'bank_directory', label: 'Bank Helplines', icon: Building2 },
     { id: 'about', label: 'How it Works' }

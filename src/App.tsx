@@ -8,6 +8,7 @@ import { AssessmentWizard } from './components/intake/AssessmentWizard';
 import { UserDashboard } from './components/dashboard/UserDashboard';
 import { CaseDetailsView } from './components/dashboard/CaseDetailsView';
 import { TrackCasePublic } from './components/tracking/TrackCasePublic';
+import { NivaranToolsHub } from './components/tools/NivaranToolsHub';
 import { SuspiciousCheck } from './components/checker/SuspiciousCheck';
 import { PreventionCenter } from './components/learn/PreventionCenter';
 import { BankDirectory } from './components/official/BankDirectory';
@@ -45,8 +46,11 @@ export const App: React.FC = () => {
         {/* Citizen Dashboard (My NIVARAN) */}
         {activeTab === 'dashboard' && <UserDashboard />}
 
-        {/* Detailed Case Dossier & Progress Timeline */}
+        {/* Detailed Case Dossier & Intelligence Hub */}
         {activeTab === 'case_details' && <CaseDetailsView />}
+
+        {/* Nivaran Investigation Mini-Tools Hub */}
+        {activeTab === 'tools' && <NivaranToolsHub />}
 
         {/* Public Case Status Tracking */}
         {activeTab === 'track_case' && <TrackCasePublic />}

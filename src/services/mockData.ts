@@ -1,4 +1,6 @@
 import { AuthUser, IncidentCase, NotificationItem } from '../types';
+import { KNOWN_CAMPAIGNS_DATABASE } from './fraudNetworkEngine';
+import { generateGenericEscalationLadder } from './responseInterpreterEngine';
 
 export const DEMO_USER: AuthUser = {
   id: 'usr-demo-001',
@@ -16,6 +18,13 @@ export const DEMO_CASE_1: IncidentCase = {
   updatedAt: '2026-08-24T14:15:00+05:30',
   isDemo: true,
   statusProgress: 'under_investigation',
+  nextAction: {
+    title: 'Submit Formal Bank Dispute Notice with 1930 Acknowledgement',
+    why: 'Under the RBI Zero-Liability circular, submitting written dispute proof within 3 working days protects your entitlement to refund reversal.',
+    actionLabel: 'Generate Bank Dispute Notice',
+    actionTab: 'references',
+    urgency: 'critical_now'
+  },
   progressTimeline: [
     {
       step: 1,
@@ -61,8 +70,76 @@ export const DEMO_CASE_1: IncidentCase = {
       description: 'Final reconciliation and case archive.'
     }
   ],
+  externalReferences: [
+    {
+      id: 'ref-hdfc-01',
+      authority: 'bank',
+      authorityName: 'HDFC Bank Fraud Cell',
+      referenceNumber: 'HDFC-98127',
+      dateSubmitted: '24 Aug 2026, 11:30 AM',
+      status: 'awaiting_response',
+      statusDisplay: 'Awaiting Bank Response',
+      source: 'User entered',
+      lastUpdated: '24 Aug 2026, 14:20',
+      notes: 'Initial debit dispute logged via 1800-258-6161 fraud hotline.'
+    },
+    {
+      id: 'ref-1930-01',
+      authority: '1930',
+      authorityName: '1930 / I4C Cyber Crime Helpline',
+      referenceNumber: 'CF-728191',
+      dateSubmitted: '24 Aug 2026, 10:45 AM',
+      status: 'acknowledged',
+      statusDisplay: 'Lien Acknowledged at Beneficiary Node',
+      source: 'User entered',
+      lastUpdated: '24 Aug 2026, 12:10',
+      notes: 'Emergency hold request transmitted to Axis Bank nodal desk.'
+    },
+    {
+      id: 'ref-ncrp-01',
+      authority: 'ncrp',
+      authorityName: 'cybercrime.gov.in (NCRP)',
+      referenceNumber: '123456789012',
+      dateSubmitted: '24 Aug 2026, 12:40 PM',
+      status: 'submitted',
+      statusDisplay: 'Formal Complaint Submitted',
+      source: 'User entered',
+      lastUpdated: '24 Aug 2026, 13:00',
+      notes: 'Police Acknowledgement slip downloaded and saved.'
+    },
+    {
+      id: 'ref-gpay-01',
+      authority: 'payment_app',
+      authorityName: 'Google Pay Grievance',
+      referenceNumber: 'GPay-88429',
+      dateSubmitted: '24 Aug 2026, 10:55 AM',
+      status: 'dispute_raised',
+      statusDisplay: 'In-App Dispute Raised',
+      source: 'User entered',
+      lastUpdated: '24 Aug 2026, 11:00',
+      notes: 'Flagged transaction as fraudulent utility impersonation.'
+    }
+  ],
+  responses: [
+    {
+      id: 'resp-001',
+      responder: 'HDFC Bank Fraud Dispute Desk',
+      authority: 'bank',
+      date: '24 Aug 2026 · 02:00 PM',
+      referenceNumber: 'HDFC-98127',
+      decision: 'Initial Acknowledgement & Verification in Progress',
+      reason: 'Transaction UTR 423719820491 logged for NPCI recall dispute.',
+      requestedDocuments: ['NCRP Acknowledgement Copy (123456789012)', 'Signed Dispute Letter'],
+      plainSummary: 'HDFC Bank has acknowledged your dispute and initiated a recall memo with Axis Bank. They have requested the official NCRP police complaint copy to finalize the chargeback review.',
+      potentialNextAction: 'Submit the NCRP complaint copy (Ref: 123456789012) to the HDFC branch manager.',
+      rawText: 'Dear Customer, we acknowledge receipt of your fraud claim ref HDFC-98127 regarding UPI transfer of INR 18,500. Please provide police/NCRP acknowledgement within 7 days.'
+    }
+  ],
+  conflicts: [],
+  connectedCampaign: KNOWN_CAMPAIGNS_DATABASE[0],
+  escalationLadder: generateGenericEscalationLadder('HDFC Bank', 'HDFC-98127'),
   category: 'upi_fraud',
-  whatHappenedSummary: 'I received an urgent call claiming to be an electricity board officer (BESCOM) regarding electricity disconnection due to an un-updated previous month bill. The caller pressured me saying power will be disconnected in 15 minutes, sent a WhatsApp link, and asked me to approve a 15-rupee verification payment via Google Pay. When I entered my UPI PIN, ₹18,500 was debited immediately.',
+  whatHappenedSummary: 'I received an urgent call from someone claiming to be an electricity board officer (BESCOM) regarding electricity disconnection due to an un-updated previous month bill. The caller pressured me saying power will be disconnected in 15 minutes, sent a WhatsApp link, and asked me to approve a 15-rupee verification payment via Google Pay. When I entered my UPI PIN, ₹18,500 was debited immediately.',
   complainant: {
     name: 'Rajesh Sharma',
     phone: '+91 98451 92837',
@@ -78,7 +155,7 @@ export const DEMO_CASE_1: IncidentCase = {
       currency: 'INR',
       timestamp: '2026-08-24 10:28:14',
       senderBank: 'HDFC Bank',
-      senderAccountMasked: '501004829104',
+      senderAccountMasked: '9104',
       recipientUpiOrAcc: 'discom.billupdate.982@okaxis',
       recipientNameIfKnown: 'M/S BILLDESK POWER MGT (Fictitious)',
       utrNumber: '423719820491',
@@ -99,7 +176,11 @@ export const DEMO_CASE_1: IncidentCase = {
       relevance: 'critical',
       fileName: 'chat_export_7019284920.txt',
       fileSizeBytes: 24500,
-      contentSnippet: '[10:21] Suspicious: Dear consumer your electricity power will be disconnected tonight at 9.30pm because previous month bill was not updated. Please call officer immediately at 7019284920.'
+      contentSnippet: '[10:21] Suspicious: Dear consumer your electricity power will be disconnected tonight at 9.30pm because previous month bill was not updated. Please call officer immediately at 7019284920.',
+      extractedData: {
+        phoneNumber: '+91 70192 84920',
+        url: 'http://bescom-bill-update.xyz/download.apk'
+      }
     },
     {
       id: 'ev-002',
@@ -111,7 +192,13 @@ export const DEMO_CASE_1: IncidentCase = {
       status: 'verified',
       relevance: 'critical',
       fileName: 'gpay_receipt_423719820491.png',
-      fileSizeBytes: 428000
+      fileSizeBytes: 428000,
+      extractedData: {
+        amount: 18500,
+        utrNumber: '423719820491',
+        upiId: 'discom.billupdate.982@okaxis',
+        merchant: 'M/S BILLDESK POWER MGT'
+      }
     },
     {
       id: 'ev-003',
@@ -122,7 +209,13 @@ export const DEMO_CASE_1: IncidentCase = {
       source: 'HDFC Bank SMS (VM-HDFCBK)',
       status: 'verified',
       relevance: 'high',
-      contentSnippet: 'Dear Customer, INR 18,500.00 debited from A/c XX9104 on 24-AUG-26 10:28:14 by UPI/423719820491/discom.bill/UPI. If not done by you, call 18002586161 immediately.'
+      contentSnippet: 'Dear Customer, INR 18,500.00 debited from A/c XX9104 on 24-AUG-26 10:28:14 by UPI/423719820491/discom.bill/UPI. If not done by you, call 18002586161 immediately.',
+      extractedData: {
+        amount: 18500,
+        utrNumber: '423719820491',
+        bank: 'HDFC Bank',
+        senderAccountMasked: '9104'
+      }
     }
   ],
   timeline: [
@@ -132,6 +225,7 @@ export const DEMO_CASE_1: IncidentCase = {
       title: 'Initial WhatsApp Threat Received',
       description: 'Received SMS & WhatsApp message claiming immediate power disconnection.',
       actor: 'suspect',
+      source: 'From uploaded screenshot (ev-001)',
       urgency: 'warning'
     },
     {
@@ -140,6 +234,7 @@ export const DEMO_CASE_1: IncidentCase = {
       title: 'Deceptive Payment Link Opened',
       description: 'Opened payment verification link sent by caller on WhatsApp.',
       actor: 'victim',
+      source: 'From user description',
       urgency: 'info'
     },
     {
@@ -148,6 +243,7 @@ export const DEMO_CASE_1: IncidentCase = {
       title: 'UPI PIN Entered under Social Pressure',
       description: 'Caller instructed that entering PIN was required for "reversal verification credit".',
       actor: 'victim',
+      source: 'From user description',
       urgency: 'warning'
     },
     {
@@ -156,7 +252,17 @@ export const DEMO_CASE_1: IncidentCase = {
       title: '₹18,500 Transferred to Suspect Account',
       description: 'HDFC Bank debited ₹18,500 with UTR 423719820491 to discom.billupdate.982@okaxis.',
       actor: 'bank',
+      source: 'From uploaded bank SMS & GPay receipt (ev-002, ev-003)',
       urgency: 'critical'
+    },
+    {
+      id: 'tl-5',
+      timestamp: '11:30 AM',
+      title: 'Bank Dispute Registered (HDFC-98127)',
+      description: 'Dispute recorded via HDFC Bank Fraud Hotline.',
+      actor: 'authority',
+      source: 'User entered external reference (ref-hdfc-01)',
+      urgency: 'info'
     }
   ],
   analysis: {
@@ -215,7 +321,7 @@ export const DEMO_CASE_1: IncidentCase = {
       how: 'Visit cybercrime.gov.in → Report Cyber Crime → Financial Fraud. Attach the NIVARAN Case Dossier PDF.',
       urgency: 'medium_today',
       category: 'law_enforcement',
-      completed: false,
+      completed: true,
       officialChannel: 'ncrp'
     }
   ],
@@ -224,15 +330,27 @@ export const DEMO_CASE_1: IncidentCase = {
       id: 'susp-1',
       type: 'upi_id',
       value: 'discom.billupdate.982@okaxis',
-      notes: 'Beneficiary handle used in Google Pay transfer'
+      source: 'Google Pay Receipt (ev-002)',
+      matchingReportsCount: 17,
+      notes: 'Beneficiary handle used in Google Pay transfer. Matched in 17 Nivaran reports.'
     },
     {
       id: 'susp-2',
       type: 'phone_number',
       value: '+91 70192 84920',
-      notes: 'Number used for WhatsApp threat call'
+      source: 'WhatsApp Chat Export (ev-001)',
+      matchingReportsCount: 17,
+      notes: 'Number used for WhatsApp threat call.'
+    },
+    {
+      id: 'susp-3',
+      type: 'website_url',
+      value: 'http://bescom-bill-update.xyz/download.apk',
+      source: 'WhatsApp Chat Transcript',
+      notes: 'Phishing download URL delivering malicious APK.'
     }
-  ]
+  ],
+  userNotes: 'Contacted HDFC branch manager on 24-Aug. Waiting for response to submitted dispute letter.'
 };
 
 export const DEMO_CASE_2: IncidentCase = {
@@ -242,6 +360,13 @@ export const DEMO_CASE_2: IncidentCase = {
   updatedAt: '2026-08-23T11:20:00+05:30',
   isDemo: true,
   statusProgress: 'information_verified',
+  nextAction: {
+    title: 'Add NCRP Official Acknowledgement Number',
+    why: 'Your Bank Fraud Cell requires the NCRP cybercrime.gov.in acknowledgement slip before processing the dispute claim.',
+    actionLabel: 'Add NCRP Reference',
+    actionTab: 'references',
+    urgency: 'high_now'
+  },
   progressTimeline: [
     {
       step: 1,
@@ -287,6 +412,24 @@ export const DEMO_CASE_2: IncidentCase = {
       description: 'Case closure.'
     }
   ],
+  externalReferences: [
+    {
+      id: 'ref-sbi-01',
+      authority: 'bank',
+      authorityName: 'State Bank of India (SBI)',
+      referenceNumber: 'SBI-REF-49210',
+      dateSubmitted: '22 Aug 2026, 05:30 PM',
+      status: 'awaiting_response',
+      statusDisplay: 'Ticket Logged with Fraud Cell',
+      source: 'User entered',
+      lastUpdated: '22 Aug 2026, 17:30',
+      notes: 'Customer support dispute registered for fraudulent collect request.'
+    }
+  ],
+  responses: [],
+  conflicts: [],
+  connectedCampaign: KNOWN_CAMPAIGNS_DATABASE[1],
+  escalationLadder: generateGenericEscalationLadder('State Bank of India', 'SBI-REF-49210'),
   category: 'fake_customer_care',
   whatHappenedSummary: 'Searched Google for airline baggage customer care number after a flight delay. Called a number listed on Google search results (+91 91203 94812). The person said my refund of ₹7,200 is approved and sent a UPI collect request on PhonePe labeled "REFUND_CREDIT". When accepted, ₹7,200 was debited from my SBI savings account.',
   complainant: {
@@ -303,7 +446,7 @@ export const DEMO_CASE_2: IncidentCase = {
       currency: 'INR',
       timestamp: '2026-08-22 16:04:10',
       senderBank: 'State Bank of India (SBI)',
-      senderAccountMasked: '30491820491',
+      senderAccountMasked: '2049',
       recipientUpiOrAcc: 'airhelp.refunds.912@ybl',
       recipientNameIfKnown: 'AIR TRAVEL REFUND HUB',
       utrNumber: '392019481029',
@@ -323,7 +466,12 @@ export const DEMO_CASE_2: IncidentCase = {
       status: 'verified',
       relevance: 'critical',
       fileName: 'phonepe_collect_receipt.png',
-      fileSizeBytes: 310000
+      fileSizeBytes: 310000,
+      extractedData: {
+        amount: 7200,
+        utrNumber: '392019481029',
+        upiId: 'airhelp.refunds.912@ybl'
+      }
     }
   ],
   timeline: [
@@ -333,6 +481,7 @@ export const DEMO_CASE_2: IncidentCase = {
       title: 'Searched Airline Support Number on Google',
       description: 'Found poisoned SEO number +91 91203 94812 pretending to be airline helpdesk.',
       actor: 'victim',
+      source: 'From user description',
       urgency: 'info'
     },
     {
@@ -341,6 +490,7 @@ export const DEMO_CASE_2: IncidentCase = {
       title: 'UPI Collect Request Accepted',
       description: 'PhonePe collect request accepted thinking it was a refund deposit.',
       actor: 'victim',
+      source: 'From user description',
       urgency: 'warning'
     },
     {
@@ -349,6 +499,7 @@ export const DEMO_CASE_2: IncidentCase = {
       title: '₹7,200 Debited from SBI Account',
       description: 'Debit alert received from State Bank of India with UTR 392019481029.',
       actor: 'bank',
+      source: 'From uploaded screenshot (ev-010)',
       urgency: 'critical'
     }
   ],
@@ -394,13 +545,17 @@ export const DEMO_CASE_2: IncidentCase = {
       id: 'susp-10',
       type: 'phone_number',
       value: '+91 91203 94812',
-      notes: 'Fake airline support number on Google search'
+      source: 'Google Search Result',
+      matchingReportsCount: 8,
+      notes: 'Fake airline support number on Google search.'
     },
     {
       id: 'susp-11',
       type: 'upi_id',
       value: 'airhelp.refunds.912@ybl',
-      notes: 'PhonePe Collect VPA'
+      source: 'PhonePe Collect Request',
+      matchingReportsCount: 8,
+      notes: 'PhonePe Collect VPA.'
     }
   ]
 };
@@ -410,38 +565,29 @@ export const INITIAL_DEMO_CASES: IncidentCase[] = [DEMO_CASE_1, DEMO_CASE_2];
 export const DEMO_NOTIFICATIONS: NotificationItem[] = [
   {
     id: 'notif-1',
-    title: 'Case NVR-2026-00124 moved to Under Investigation',
-    message: 'Beneficiary bank node lien request has been acknowledged under the 1930 / I4C framework.',
-    timestamp: '24 Aug 2026 · 01:30 PM',
+    title: 'HDFC Bank Response Added (Ref: HDFC-98127)',
+    message: 'HDFC Bank has acknowledged recall memo and requested NCRP copy.',
+    timestamp: '24 Aug 2026 · 02:00 PM',
     read: false,
-    type: 'status_change',
+    type: 'response_alert',
     caseId: 'NVR-2026-00124'
   },
   {
     id: 'notif-2',
-    title: 'Urgent Action Reminder: Call 1930',
-    message: 'If you have not already spoken to 1930 operators, provide UTR 423719820491 immediately.',
-    timestamp: '24 Aug 2026 · 11:15 AM',
+    title: 'Possible Connected Campaign Detected',
+    message: 'Recipient handle discom.billupdate.982@okaxis matches 17 reports across the Nivaran network.',
+    timestamp: '24 Aug 2026 · 01:30 PM',
     read: false,
-    type: 'action_reminder',
+    type: 'evidence_alert',
     caseId: 'NVR-2026-00124'
   },
   {
     id: 'notif-3',
-    title: 'Case Summary PDF Generated',
-    message: 'Official Case Dossier for Case NVR-2026-00124 is ready for download.',
-    timestamp: '24 Aug 2026 · 10:45 AM',
-    read: true,
-    type: 'system',
+    title: 'Case Readiness: 7 / 9 Items Available',
+    message: 'Your case dossier has core transaction proof. Submit Bank Dispute Notice to complete escalation readiness.',
+    timestamp: '24 Aug 2026 · 11:15 AM',
+    read: false,
+    type: 'action_reminder',
     caseId: 'NVR-2026-00124'
-  },
-  {
-    id: 'notif-4',
-    title: 'Evidence Verified for Case NVR-2026-00089',
-    message: 'PhonePe payment receipt artifact verified. Proceed to NCRP formal filing.',
-    timestamp: '22 Aug 2026 · 05:00 PM',
-    read: true,
-    type: 'evidence_alert',
-    caseId: 'NVR-2026-00089'
   }
 ];
