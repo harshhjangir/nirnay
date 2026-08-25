@@ -2,12 +2,31 @@ import { jsPDF } from 'jspdf';
 import { IncidentCase } from '../types';
 
 /**
+ * Text sanitization for jsPDF
+ * Standard jsPDF fonts (Helvetica) only support WinAnsiEncoding.
+ * Replaces Unicode Rupee symbols (₹), non-breaking spaces, smart quotes,
+ * and dashes to prevent glyph corruption, corrupted widths, and kerning overlap.
+ */
+function sanitizeText(str: string | undefined | null): string {
+  if (!str) return '';
+  return String(str)
+    .replace(/₹/g, 'INR ')
+    .replace(/[–—]/g, '-')
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/[•]/g, '-')
+    .replace(/\r\n/g, '\n')
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .trim();
+}
+
+/**
  * Enhanced PDF Case Dossier Generator for NIVARAN
- * Produces structured, multi-page, non-overlapping reports formatted for:
- * - 1930 Helpline / I4C CFCFRMS Nodal Verification
- * - Bank Fraud Control Cells & Grievance Redressal Officers
- * - State Cyber Crime Police Stations (NCRP FIR filing)
- * - RBI Banking Ombudsman (CMS Portal escalation)
+ * Structured, multi-page, non-overlapping institutional document formatted for:
+ * - 1930 Helpline / I4C CFCFRMS Nodal Officers
+ * - Bank Fraud Cells & Principal Nodal Grievance Desks
+ * - Cyber Crime Police Stations (NCRP FIR filing)
+ * - RBI Banking Ombudsman (CMS Portal Escalation)
  */
 export function generateCasePdf(incident: IncidentCase) {
   const doc = new jsPDF({
@@ -16,94 +35,96 @@ export function generateCasePdf(incident: IncidentCase) {
     format: 'a4'
   });
 
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
+  const pageWidth = 210;
+  const pageHeight = 297;
   const margin = 14;
-  const contentWidth = pageWidth - margin * 2;
-  const bottomMargin = 22; // Safe distance from bottom for footer
+  const contentWidth = pageWidth - margin * 2; // 182mm
+  const bottomMargin = 18;
 
   let currentPage = 1;
   let y = margin;
 
-  // Helper: Draw running header on any page
+  // Draw running header
   const drawRunningHeader = (isFirstPage: boolean) => {
     if (isFirstPage) {
-      // Top Dark Banner for Page 1
+      // Top Dark Banner (Height: 30mm)
       doc.setFillColor(15, 23, 42); // Slate 900
-      doc.rect(0, 0, pageWidth, 28, 'F');
+      doc.rect(0, 0, pageWidth, 30, 'F');
 
-      // Platform Brand
+      // Left: Platform Branding
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(14);
+      doc.setFontSize(13);
       doc.setTextColor(255, 255, 255);
       doc.text('NIVARAN', margin, 11);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
       doc.setTextColor(148, 163, 184); // Slate 400
-      doc.text('PRIVACY-PRESERVING FRAUD CASE INTELLIGENCE', margin + 30, 11);
+      doc.text('|  PRIVACY-PRESERVING FRAUD CASE INTELLIGENCE', margin + 26, 11);
 
-      doc.setFontSize(7.5);
+      doc.setFontSize(7.2);
       doc.setTextColor(203, 213, 225); // Slate 300
-      doc.text('STANDARDIZED EVIDENCE DOSSIER & INSTITUTIONAL ESCALATION RECORD', margin, 18);
+      doc.text('STANDARDIZED EVIDENCE DOSSIER (FOR 1930 / NCRP / BANK NODAL ESCALATION)', margin, 19);
 
-      // Case ID & Status Badge on Right
+      // Right: Case ID and Timestamp (Placed safely on the right)
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9.5);
+      doc.setFontSize(10);
       doc.setTextColor(56, 189, 248); // Sky 400
-      doc.text(`CASE ID: ${incident.caseId}`, pageWidth - margin, 11, { align: 'right' });
+      doc.text(`CASE ID: ${sanitizeText(incident.caseId)}`, pageWidth - margin, 11, { align: 'right' });
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(148, 163, 184);
+      const genTime = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+      doc.text(`Generated: ${genTime}`, pageWidth - margin, 19, { align: 'right' });
+
+      // Teal Accent Line
+      doc.setFillColor(14, 165, 233); // Sky 500
+      doc.rect(0, 29, pageWidth, 1.2, 'F');
+
+      y = 35;
+    } else {
+      // Minimal Header for subsequent pages (Height: 14mm)
+      doc.setFillColor(248, 250, 252);
+      doc.rect(0, 0, pageWidth, 12, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.3);
+      doc.line(0, 12, pageWidth, 12);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(15, 23, 42);
+      doc.text('NIVARAN FRAUD CASE DOSSIER', margin, 8);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7.5);
-      doc.setTextColor(148, 163, 184);
-      doc.text(`Generated: ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} · ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`, pageWidth - margin, 18, { align: 'right' });
-
-      // Clean Accent Line
-      doc.setFillColor(14, 165, 233); // Brand Cyan
-      doc.rect(0, 27, pageWidth, 1.2, 'F');
-
-      y = 34;
-    } else {
-      // Minimal Running Header for subsequent pages
-      doc.setFillColor(248, 250, 252);
-      doc.rect(0, 0, pageWidth, 14, 'F');
-      doc.setDrawColor(226, 232, 240);
-      doc.line(0, 14, pageWidth, 14);
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8);
-      doc.setTextColor(15, 23, 42);
-      doc.text('NIVARAN FRAUD CASE DOSSIER', margin, 9);
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
       doc.setTextColor(100, 116, 139);
-      doc.text(`Case Ref: ${incident.caseId}`, pageWidth / 2, 9, { align: 'center' });
-      doc.text('CONFIDENTIAL & PRIVILEGED', pageWidth - margin, 9, { align: 'right' });
+      doc.text(`Case ID: ${sanitizeText(incident.caseId)}`, pageWidth / 2, 8, { align: 'center' });
+      doc.text('CONFIDENTIAL & PRIVILEGED', pageWidth - margin, 8, { align: 'right' });
 
-      y = 20;
+      y = 18;
     }
   };
 
-  // Helper: Draw running footer on every page
-  const drawRunningFooter = (pageNumber: number) => {
-    const footerY = pageHeight - 10;
+  // Draw running footer
+  const drawRunningFooter = (pageNum: number) => {
+    const footerY = pageHeight - 8;
     doc.setDrawColor(226, 232, 240);
     doc.setLineWidth(0.3);
-    doc.line(margin, footerY - 4, pageWidth - margin, footerY - 4);
+    doc.line(margin, footerY - 3, pageWidth - margin, footerY - 3);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(6.8);
     doc.setTextColor(148, 163, 184);
-    doc.text('NIVARAN is an independent civic intelligence platform. Does not replace official statutory reporting on cybercrime.gov.in.', margin, footerY);
+    doc.text('NIVARAN Civic Fraud Intelligence Platform. Prepared for statutory submission to 1930 / cybercrime.gov.in / Bank.', margin, footerY);
 
     doc.setFont('helvetica', 'bold');
-    doc.text(`Page ${pageNumber}`, pageWidth - margin, footerY, { align: 'right' });
+    doc.text(`Page ${pageNum}`, pageWidth - margin, footerY, { align: 'right' });
   };
 
-  // Helper: Pagination check
-  const ensureSpace = (requiredHeight: number) => {
-    if (y + requiredHeight > pageHeight - bottomMargin) {
+  // Pagination check
+  const ensureSpace = (neededHeight: number) => {
+    if (y + neededHeight > pageHeight - bottomMargin) {
       drawRunningFooter(currentPage);
       doc.addPage();
       currentPage++;
@@ -111,386 +132,469 @@ export function generateCasePdf(incident: IncidentCase) {
     }
   };
 
-  // Helper: Draw Section Header Bar
-  const drawSectionHeader = (title: string, tag?: string) => {
+  // Section Header Banner
+  const drawSectionHeader = (title: string, subtitle?: string) => {
     ensureSpace(12);
     doc.setFillColor(241, 245, 249); // Slate 100
-    doc.rect(margin, y, contentWidth, 7, 'F');
+    doc.rect(margin, y, contentWidth, 6.5, 'F');
     doc.setDrawColor(203, 213, 225);
-    doc.rect(margin, y, contentWidth, 7, 'S');
+    doc.setLineWidth(0.3);
+    doc.rect(margin, y, contentWidth, 6.5, 'S');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
+    doc.setFontSize(8.5);
     doc.setTextColor(15, 23, 42);
-    doc.text(title.toUpperCase(), margin + 3, y + 4.8);
+    doc.text(sanitizeText(title).toUpperCase(), margin + 3, y + 4.5);
 
-    if (tag) {
+    if (subtitle) {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(7);
       doc.setTextColor(14, 165, 233);
-      doc.text(tag.toUpperCase(), pageWidth - margin - 3, y + 4.8, { align: 'right' });
+      doc.text(sanitizeText(subtitle).toUpperCase(), pageWidth - margin - 3, y + 4.5, { align: 'right' });
     }
 
-    y += 10;
+    y += 9.5;
   };
 
   // -------------------------------------------------------------
-  // START DOCUMENT RENDERING
+  // RENDER PAGE 1
   // -------------------------------------------------------------
   drawRunningHeader(true);
 
-  // 1. EXECUTIVE SUMMARY & COMPLAINANT PARTICULARS CARD
-  ensureSpace(40);
+  // 1. EXECUTIVE SUMMARY - 2x2 DISCRETE BOXED CARDS (ZERO OVERLAP)
+  ensureSpace(42);
+  const cardW = (contentWidth - 4) / 2; // 89mm
+  const cardH = 17;
   const totalAmount = incident.transactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
-  const cardHeight = 34;
 
+  // Box 1: Disputed Amount (Top Left)
+  const b1X = margin;
+  const b1Y = y;
   doc.setFillColor(248, 250, 252);
-  doc.roundedRect(margin, y, contentWidth, cardHeight, 1.5, 1.5, 'F');
+  doc.roundedRect(b1X, b1Y, cardW, cardH, 1, 1, 'F');
   doc.setDrawColor(226, 232, 240);
-  doc.roundedRect(margin, y, contentWidth, cardHeight, 1.5, 1.5, 'S');
+  doc.setLineWidth(0.3);
+  doc.roundedRect(b1X, b1Y, cardW, cardH, 1, 1, 'S');
 
-  // Left Column: Incident Metadata
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.5);
+  doc.setFontSize(6.8);
   doc.setTextColor(100, 116, 139);
-  doc.text('DISPUTED AMOUNT', margin + 4, y + 6);
+  doc.text('TOTAL DISPUTED FINANCIAL LOSS', b1X + 3.5, b1Y + 5);
+
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
+  doc.setFontSize(12);
   doc.setTextColor(225, 29, 72); // Rose 600
-  doc.text(`INR ${totalAmount.toLocaleString('en-IN')}`, margin + 4, y + 12);
+  doc.text(`INR ${totalAmount.toLocaleString('en-IN')}`, b1X + 3.5, b1Y + 12);
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text('FRAUD CLASSIFICATION', margin + 4, y + 18);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8.5);
-  doc.setTextColor(15, 23, 42);
-  const likelyTypeStr = incident.analysis?.likelyType || (incident.category === 'upi_fraud' ? 'UPI Social Engineering' : incident.category.replace('_', ' ').toUpperCase());
-  doc.text(likelyTypeStr.length > 40 ? likelyTypeStr.slice(0, 38) + '..' : likelyTypeStr, margin + 4, y + 23);
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text('RISK SEVERITY', margin + 4, y + 28);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.setTextColor(180, 83, 9); // Amber 700
-  doc.text(`${(incident.analysis?.riskLevel || 'HIGH').toUpperCase()} (Score: ${incident.analysis?.riskScore || 85}/100)`, margin + 4, y + 32);
-
-  // Vertical Divider
+  // Box 2: Complainant Details (Top Right)
+  const b2X = margin + cardW + 4;
+  const b2Y = y;
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(b2X, b2Y, cardW, cardH, 1, 1, 'F');
   doc.setDrawColor(226, 232, 240);
-  doc.line(margin + 90, y + 4, margin + 90, y + cardHeight - 4);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(b2X, b2Y, cardW, cardH, 1, 1, 'S');
 
-  // Right Column: Complainant Information
-  const rightColX = margin + 96;
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.5);
+  doc.setFontSize(6.8);
   doc.setTextColor(100, 116, 139);
-  doc.text('COMPLAINANT PARTICULARS & JURISDICTION', rightColX, y + 6);
+  doc.text('COMPLAINANT IDENTIFIER & CONTACT', b2X + 3.5, b2Y + 5);
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8.5);
   doc.setTextColor(15, 23, 42);
-  doc.text(`Name: ${incident.complainant.name || 'Citizen Complainant'}`, rightColX, y + 12);
+  const compName = sanitizeText(incident.complainant?.name || 'Citizen Complainant');
+  doc.text(compName.length > 25 ? compName.slice(0, 23) + '..' : compName, b2X + 3.5, b2Y + 10);
 
   doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Phone: ${sanitizeText(incident.complainant?.phone || 'N/A')}`, b2X + 3.5, b2Y + 14.5);
+
+  // Box 3: Classification & Risk (Bottom Left)
+  const b3X = margin;
+  const b3Y = y + cardH + 3;
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(b3X, b3Y, cardW, cardH, 1, 1, 'F');
+  doc.setDrawColor(226, 232, 240);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(b3X, b3Y, cardW, cardH, 1, 1, 'S');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.8);
+  doc.setTextColor(100, 116, 139);
+  doc.text('FRAUD PATTERN & RISK CLASSIFICATION', b3X + 3.5, b3Y + 5);
+
+  doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
-  doc.setTextColor(51, 65, 85);
-  doc.text(`Phone: ${incident.complainant.phone || 'N/A'}`, rightColX, y + 17);
-  doc.text(`Email: ${incident.complainant.email || 'N/A'}`, rightColX, y + 22);
-  doc.text(`Location: ${incident.complainant.city || 'N/A'}, ${incident.complainant.state || 'N/A'}`, rightColX, y + 27);
-  doc.text(`Date of Occurrence: ${incident.incidentDate || '2026-08-24'} at ${incident.incidentTime || '10:28 AM'}`, rightColX, y + 32);
+  doc.setTextColor(15, 23, 42);
+  const classStr = sanitizeText(incident.analysis?.likelyType || (incident.category === 'upi_fraud' ? 'UPI Social Engineering' : incident.category.replace('_', ' ').toUpperCase()));
+  doc.text(classStr.length > 34 ? classStr.slice(0, 32) + '..' : classStr, b3X + 3.5, b3Y + 10);
 
-  y += cardHeight + 6;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.2);
+  doc.setTextColor(180, 83, 9); // Amber 700
+  doc.text(`Risk: ${sanitizeText(incident.analysis?.riskLevel || 'HIGH').toUpperCase()} (Score: ${incident.analysis?.riskScore || 80}/100)`, b3X + 3.5, b3Y + 14.5);
 
-  // 2. DISPUTED FINANCIAL TRANSACTIONS LEDGER (PRIMARY TRIAGE)
+  // Box 4: Jurisdiction & Occurrence Date (Bottom Right)
+  const b4X = margin + cardW + 4;
+  const b4Y = y + cardH + 3;
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(b4X, b4Y, cardW, cardH, 1, 1, 'F');
+  doc.setDrawColor(226, 232, 240);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(b4X, b4Y, cardW, cardH, 1, 1, 'S');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.8);
+  doc.setTextColor(100, 116, 139);
+  doc.text('JURISDICTION & INCIDENT OCCURRENCE', b4X + 3.5, b4Y + 5);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(15, 23, 42);
+  const locStr = `${sanitizeText(incident.complainant?.city || 'Bengaluru')}, ${sanitizeText(incident.complainant?.state || 'Karnataka')}`;
+  doc.text(locStr.length > 34 ? locStr.slice(0, 32) + '..' : locStr, b4X + 3.5, b4Y + 10);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.2);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Occurred: ${sanitizeText(incident.incidentDate || '2026-08-24')} at ${sanitizeText(incident.incidentTime || '10:28 AM')}`, b4X + 3.5, b4Y + 14.5);
+
+  y += cardH * 2 + 7;
+
+  // -------------------------------------------------------------
+  // 2. DISPUTED FINANCIAL TRANSACTIONS LEDGER (EXPLICIT TABLE COLUMNS)
+  // -------------------------------------------------------------
   drawSectionHeader('1. Disputed Financial Transactions Ledger', 'For 1930 / I4C Lien Triage');
 
-  // Table Header Row
-  ensureSpace(12);
-  const colX = {
-    time: margin + 2,
-    bank: margin + 26,
-    method: margin + 68,
-    amount: margin + 96,
-    recipient: margin + 122,
-    utr: margin + 158
+  // Column definitions with absolute X positions and safe widths (Total = 182mm)
+  const cols = {
+    time: { x: margin + 2, w: 18 },
+    bank: { x: margin + 21, w: 38 },
+    method: { x: margin + 60, w: 24 },
+    amount: { x: margin + 85, w: 26 },
+    recipient: { x: margin + 112, w: 38 },
+    utr: { x: margin + 151, w: 29 }
   };
 
+  // Table Header
+  ensureSpace(12);
   doc.setFillColor(15, 23, 42); // Slate 900
-  doc.rect(margin, y, contentWidth, 6, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7);
-  doc.setTextColor(255, 255, 255);
-  doc.text('TIMESTAMP', colX.time, y + 4.2);
-  doc.text('DEBITING BANK & A/C', colX.bank, y + 4.2);
-  doc.text('CHANNEL', colX.method, y + 4.2);
-  doc.text('AMOUNT (INR)', colX.amount, y + 4.2);
-  doc.text('BENEFICIARY VPA / ACC', colX.recipient, y + 4.2);
-  doc.text('12-DIGIT UTR / RRN', colX.utr, y + 4.2);
-  y += 6;
+  doc.rect(margin, y, contentWidth, 5.5, 'F');
 
-  // Table Data Rows
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.8);
+  doc.setTextColor(255, 255, 255);
+  doc.text('TIME', cols.time.x, y + 3.8);
+  doc.text('DEBIT BANK & A/C', cols.bank.x, y + 3.8);
+  doc.text('METHOD / APP', cols.method.x, y + 3.8);
+  doc.text('AMOUNT (INR)', cols.amount.x, y + 3.8);
+  doc.text('BENEFICIARY VPA / A/C', cols.recipient.x, y + 3.8);
+  doc.text('12-DIGIT UTR / RRN', cols.utr.x, y + 3.8);
+  y += 5.5;
+
+  // Table Rows
   incident.transactions.forEach((tx, idx) => {
     ensureSpace(8);
     const isEven = idx % 2 === 0;
     if (isEven) {
       doc.setFillColor(248, 250, 252);
-      doc.rect(margin, y, contentWidth, 7, 'F');
+      doc.rect(margin, y, contentWidth, 6.5, 'F');
     }
     doc.setDrawColor(226, 232, 240);
-    doc.line(margin, y + 7, pageWidth - margin, y + 7);
+    doc.setLineWidth(0.2);
+    doc.line(margin, y + 6.5, pageWidth - margin, y + 6.5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(15, 23, 42);
+
+    const timeRaw = sanitizeText(tx.timestamp || '10:28 AM');
+    const timeDisplay = timeRaw.includes(' ') ? timeRaw.split(' ')[1] : timeRaw;
+    doc.text(timeDisplay.slice(0, 10), cols.time.x, y + 4.2);
+
+    const bankDisplay = `${sanitizeText(tx.senderBank || 'HDFC Bank')} (*${sanitizeText(tx.senderAccountMasked || '9104').slice(-4)})`;
+    doc.text(bankDisplay.length > 22 ? bankDisplay.slice(0, 20) + '..' : bankDisplay, cols.bank.x, y + 4.2);
+
+    const methodDisplay = `${sanitizeText(tx.paymentMethod || 'UPI')} (${sanitizeText(tx.paymentApp || 'GPay')})`;
+    doc.text(methodDisplay.length > 15 ? methodDisplay.slice(0, 13) + '..' : methodDisplay, cols.method.x, y + 4.2);
+
+    // Disputed Amount Highlighted in Red Bold
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(225, 29, 72);
+    doc.text(`INR ${(tx.amount || 0).toLocaleString('en-IN')}`, cols.amount.x, y + 4.2);
+
+    // Beneficiary VPA
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(15, 23, 42);
+    const recipRaw = sanitizeText(tx.recipientUpiOrAcc || 'N/A');
+    doc.text(recipRaw.length > 22 ? recipRaw.slice(0, 20) + '..' : recipRaw, cols.recipient.x, y + 4.2);
+
+    // 12-Digit UTR Highlighted in Cyan Bold
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(14, 165, 233);
+    const utrDisplay = sanitizeText(tx.utrNumber || 'Pending');
+    doc.text(utrDisplay, cols.utr.x, y + 4.2);
+
+    y += 6.5;
+  });
+
+  y += 4;
+
+  // -------------------------------------------------------------
+  // 3. INCIDENT MODUS OPERANDI & NARRATIVE STATEMENT
+  // -------------------------------------------------------------
+  drawSectionHeader('2. Incident Modus Operandi & Narrative Statement', 'Verified Narrative');
+
+  ensureSpace(18);
+  const narrativeText = sanitizeText(incident.whatHappenedSummary || 'Incident submitted through the Nivaran structured evidence intake workflow.');
+  const narrativeLines = doc.splitTextToSize(narrativeText, contentWidth - 6);
+
+  // Background Box for Narrative
+  const narrBoxH = narrativeLines.length * 3.8 + 4;
+  ensureSpace(narrBoxH);
+
+  doc.setFillColor(250, 250, 250);
+  doc.rect(margin, y, contentWidth, narrBoxH, 'F');
+  doc.setDrawColor(226, 232, 240);
+  doc.setLineWidth(0.2);
+  doc.rect(margin, y, contentWidth, narrBoxH, 'S');
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.8);
+  doc.setTextColor(30, 41, 59); // Slate 800
+  doc.text(narrativeLines, margin + 3, y + 3.8);
+  y += narrBoxH + 3.5;
+
+  // Key Extracted Scam Factors Bullet Points
+  if (incident.analysis?.reasonFactors && incident.analysis.reasonFactors.length > 0) {
+    ensureSpace(incident.analysis.reasonFactors.length * 3.8 + 6);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.2);
+    doc.setTextColor(100, 116, 139);
+    doc.text('EXTRACTED SOCIAL ENGINEERING & RISK FACTORS:', margin + 1, y);
+    y += 3.8;
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.2);
-    doc.setTextColor(15, 23, 42);
-
-    const timeStr = tx.timestamp ? (tx.timestamp.includes(' ') ? tx.timestamp.split(' ')[1] : tx.timestamp) : '10:28';
-    doc.text(timeStr, colX.time, y + 4.5);
-    doc.text(`${tx.senderBank} (*${(tx.senderAccountMasked || '9104').slice(-4)})`, colX.bank, y + 4.5);
-    doc.text(`${tx.paymentMethod || 'UPI'} (${tx.paymentApp || 'GPay'})`, colX.method, y + 4.5);
-
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(225, 29, 72);
-    doc.text(`INR ${(tx.amount || 0).toLocaleString('en-IN')}`, colX.amount, y + 4.5);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(15, 23, 42);
-    const recipStr = (tx.recipientUpiOrAcc || '').length > 20 ? (tx.recipientUpiOrAcc || '').slice(0, 18) + '..' : (tx.recipientUpiOrAcc || 'N/A');
-    doc.text(recipStr, colX.recipient, y + 4.5);
-
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(14, 165, 233);
-    doc.text(tx.utrNumber || 'Pending', colX.utr, y + 4.5);
-
-    y += 7;
-  });
-
-  y += 5;
-
-  // 3. INCIDENT MODUS OPERANDI & NARRATIVE STATEMENT
-  drawSectionHeader('2. Incident Modus Operandi & Narrative Statement', 'Verified Statement');
-
-  ensureSpace(15);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(30, 41, 59); // Slate 800
-
-  const narrativeText = incident.whatHappenedSummary || 'Incident submitted through the Nivaran structured evidence intake workflow.';
-  const narrativeLines = doc.splitTextToSize(narrativeText, contentWidth - 4);
-  
-  ensureSpace(narrativeLines.length * 3.8 + 4);
-  doc.text(narrativeLines, margin + 2, y + 2);
-  y += narrativeLines.length * 3.8 + 5;
-
-  // Extracted Scam Factors Bullet Points
-  if (incident.analysis?.reasonFactors && incident.analysis.reasonFactors.length > 0) {
-    ensureSpace(incident.analysis.reasonFactors.length * 4 + 8);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.5);
-    doc.setTextColor(100, 116, 139);
-    doc.text('EXTRACTED DECEPTION MECHANISMS & SIGNALS:', margin + 2, y);
-    y += 4;
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
     doc.setTextColor(51, 65, 85);
     incident.analysis.reasonFactors.forEach((factor) => {
-      doc.text(`•  ${factor}`, margin + 6, y);
-      y += 3.8;
+      ensureSpace(4);
+      doc.text(`-  ${sanitizeText(factor)}`, margin + 4, y);
+      y += 3.5;
     });
-    y += 3;
+    y += 2.5;
   }
 
-  // 4. SUSPECT IDENTIFIERS & FRAUD CAMPAIGN INTELLIGENCE
+  // -------------------------------------------------------------
+  // 4. SUSPECT IDENTIFIERS & FRAUD NODES
+  // -------------------------------------------------------------
   if (incident.suspects && incident.suspects.length > 0) {
     drawSectionHeader('3. Suspect Identifiers & Communication Nodes', 'Syndicate Signals');
 
     incident.suspects.forEach((s) => {
       ensureSpace(8);
       doc.setFillColor(248, 250, 252);
-      doc.roundedRect(margin, y, contentWidth, 7, 1, 1, 'F');
+      doc.roundedRect(margin, y, contentWidth, 6.5, 1, 1, 'F');
       doc.setDrawColor(226, 232, 240);
-      doc.roundedRect(margin, y, contentWidth, 7, 1, 1, 'S');
+      doc.setLineWidth(0.2);
+      doc.roundedRect(margin, y, contentWidth, 6.5, 1, 1, 'S');
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.2);
+      doc.setFontSize(7);
       doc.setTextColor(14, 165, 233);
-      doc.text(`[${s.type.toUpperCase()}]`, margin + 3, y + 4.6);
+      doc.text(`[${sanitizeText(s.type).toUpperCase()}]`, margin + 3, y + 4.2);
 
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(15, 23, 42);
-      doc.text(s.value, margin + 28, y + 4.6);
+      doc.text(sanitizeText(s.value), margin + 26, y + 4.2);
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7);
+      doc.setFontSize(6.8);
       doc.setTextColor(100, 116, 139);
-      const matchNote = s.matchingReportsCount && s.matchingReportsCount > 0 ? `• Matched in ${s.matchingReportsCount} Nivaran Reports` : '';
-      const sourceNote = `Source: ${s.source || 'Evidence'} ${matchNote}`;
-      doc.text(sourceNote, pageWidth - margin - 3, y + 4.6, { align: 'right' });
+      const matchNote = s.matchingReportsCount && s.matchingReportsCount > 0 ? `Matched in ${s.matchingReportsCount} Nivaran Reports` : 'Direct Evidence';
+      doc.text(matchNote, pageWidth - margin - 3, y + 4.2, { align: 'right' });
 
-      y += 8.5;
+      y += 7.5;
     });
-
     y += 2;
   }
 
+  // -------------------------------------------------------------
   // 5. EXTERNAL COMPLAINT REFERENCES & RESPONSE MEMORY
+  // -------------------------------------------------------------
   drawSectionHeader('4. External Reference Ledger & Bank Responses', 'Multi-Agency Tracking');
 
   if (incident.externalReferences && incident.externalReferences.length > 0) {
     incident.externalReferences.forEach((ref) => {
-      ensureSpace(9);
+      ensureSpace(8);
       doc.setFillColor(248, 250, 252);
-      doc.rect(margin, y, contentWidth, 7.5, 'F');
+      doc.rect(margin, y, contentWidth, 6.8, 'F');
       doc.setDrawColor(226, 232, 240);
-      doc.rect(margin, y, contentWidth, 7.5, 'S');
+      doc.setLineWidth(0.2);
+      doc.rect(margin, y, contentWidth, 6.8, 'S');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.2);
+      doc.setTextColor(15, 23, 42);
+      const authName = sanitizeText(ref.authorityName || 'Authority');
+      doc.text(authName.length > 30 ? authName.slice(0, 28) + '..' : authName, margin + 3, y + 4.3);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(14, 165, 233);
+      doc.text(`Ref: ${sanitizeText(ref.referenceNumber)}`, margin + 65, y + 4.3);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.8);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Status: ${sanitizeText(ref.statusDisplay)}`, margin + 115, y + 4.3);
+      doc.text(sanitizeText(ref.dateSubmitted || 'Logged'), pageWidth - margin - 3, y + 4.3, { align: 'right' });
+
+      y += 7.8;
+    });
+    y += 1.5;
+  }
+
+  // Authority Responses Breakdown
+  if (incident.responses && incident.responses.length > 0) {
+    incident.responses.forEach((resp) => {
+      ensureSpace(22);
+      doc.setFillColor(254, 242, 242); // Rose 50
+      doc.roundedRect(margin, y, contentWidth, 20, 1, 1, 'F');
+      doc.setDrawColor(254, 202, 202);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(margin, y, contentWidth, 20, 1, 1, 'S');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.2);
+      doc.setTextColor(153, 27, 27); // Dark Red
+      doc.text(`OFFICIAL RESPONSE: ${sanitizeText(resp.responder).toUpperCase()} (${sanitizeText(resp.date)})`, margin + 3, y + 4.5);
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(7.5);
       doc.setTextColor(15, 23, 42);
-      doc.text(ref.authorityName, margin + 3, y + 4.8);
-
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(14, 165, 233);
-      doc.text(`Ref: ${ref.referenceNumber}`, margin + 65, y + 4.8);
+      doc.text(`Decision: ${sanitizeText(resp.decision)}`, margin + 3, y + 9);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7);
-      doc.setTextColor(100, 116, 139);
-      doc.text(`Status: ${ref.statusDisplay}`, margin + 115, y + 4.8);
-      doc.text(ref.dateSubmitted || 'Logged', pageWidth - margin - 3, y + 4.8, { align: 'right' });
+      doc.setTextColor(71, 85, 105);
+      const respSummary = sanitizeText(resp.whatTheySaid || resp.reason || '');
+      const respLines = doc.splitTextToSize(respSummary, contentWidth - 8);
+      doc.text(respLines.slice(0, 2), margin + 3, y + 13);
 
-      y += 9;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(6.8);
+      doc.setTextColor(2, 132, 199);
+      const nextStep = sanitizeText(resp.potentialNextAction || 'Escalate to Principal Nodal Officer / RBI CMS Portal');
+      doc.text(`Next Legal Step: ${nextStep.length > 95 ? nextStep.slice(0, 93) + '..' : nextStep}`, margin + 3, y + 17.5);
+
+      y += 22;
     });
     y += 2;
   }
 
-  // Authority Responses Breakdown if available
-  if (incident.responses && incident.responses.length > 0) {
-    incident.responses.forEach((resp) => {
-      ensureSpace(24);
-      doc.setFillColor(254, 242, 242); // Light red
-      doc.roundedRect(margin, y, contentWidth, 22, 1, 1, 'F');
-      doc.setDrawColor(254, 202, 202);
-      doc.roundedRect(margin, y, contentWidth, 22, 1, 1, 'S');
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.5);
-      doc.setTextColor(153, 27, 27); // Dark red
-      doc.text(`OFFICIAL RESPONSE RECEIVED: ${resp.responder.toUpperCase()} (${resp.date})`, margin + 3, y + 5);
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8);
-      doc.setTextColor(15, 23, 42);
-      doc.text(`Decision: ${resp.decision}`, margin + 3, y + 10);
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7.2);
-      doc.setTextColor(71, 85, 105);
-      const respLines = doc.splitTextToSize(resp.whatTheySaid || resp.reason, contentWidth - 8);
-      doc.text(respLines.slice(0, 2), margin + 3, y + 14.5);
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7);
-      doc.setTextColor(2, 132, 199);
-      doc.text(`Next Legal Step: ${resp.potentialNextAction || 'Escalate to Principal Nodal Officer / RBI CMS Portal'}`, margin + 3, y + 19.5);
-
-      y += 25;
-    });
-  }
-
-  // 6. FACTUAL CHRONOLOGICAL TIMELINE (WITH PROVENANCE TAGS)
+  // -------------------------------------------------------------
+  // 6. FACTUAL CHRONOLOGICAL TIMELINE (WITH PROVENANCE LABELS)
+  // -------------------------------------------------------------
   if (incident.timeline && incident.timeline.length > 0) {
     drawSectionHeader('5. Factual Chronological Timeline', 'Source-Attributed Provenance');
 
     incident.timeline.forEach((tl) => {
-      const descLines = doc.splitTextToSize(tl.description, contentWidth - 28);
-      const rowHeight = Math.max(8, descLines.length * 3.5 + 6);
+      const descLines = doc.splitTextToSize(sanitizeText(tl.description), contentWidth - 32);
+      const rowHeight = Math.max(7.5, descLines.length * 3.2 + 5.5);
       ensureSpace(rowHeight);
 
-      // Time Column on Left
+      // Time Column
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.2);
+      doc.setTextColor(14, 165, 233);
+      doc.text(sanitizeText(tl.timestamp || 'Time'), margin + 2, y + 3.8);
+
+      // Event Title
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(7.5);
-      doc.setTextColor(14, 165, 233);
-      doc.text(tl.timestamp || 'Time', margin + 2, y + 4);
-
-      // Provenance Tag & Title
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8);
       doc.setTextColor(15, 23, 42);
-      doc.text(tl.title, margin + 24, y + 4);
+      const titleStr = sanitizeText(tl.title);
+      doc.text(titleStr.length > 60 ? titleStr.slice(0, 58) + '..' : titleStr, margin + 24, y + 3.8);
 
+      // Provenance Badge on Right
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(6.5);
+      doc.setFontSize(6.2);
       doc.setTextColor(100, 116, 139);
-      doc.text(`[${tl.sourceLabel || 'USER REPORTED'}]`, pageWidth - margin - 2, y + 4, { align: 'right' });
+      doc.text(`[${sanitizeText(tl.sourceLabel || 'USER REPORTED')}]`, pageWidth - margin - 2, y + 3.8, { align: 'right' });
 
-      // Description Lines
+      // Indented Description
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7.2);
+      doc.setFontSize(6.8);
       doc.setTextColor(71, 85, 105);
-      doc.text(descLines, margin + 24, y + 8);
+      doc.text(descLines, margin + 24, y + 7.5);
 
-      y += rowHeight + 1.5;
+      y += rowHeight + 1;
     });
 
-    y += 4;
+    y += 3;
   }
 
+  // -------------------------------------------------------------
   // 7. DIGITAL EVIDENCE INDEX & ATTACHMENTS LEDGER
+  // -------------------------------------------------------------
   if (incident.evidence && incident.evidence.length > 0) {
     drawSectionHeader('6. Digital Evidence Index & Artifacts Ledger', 'Preserved Records');
 
     incident.evidence.forEach((ev, idx) => {
-      ensureSpace(7.5);
+      ensureSpace(7);
       doc.setFillColor(248, 250, 252);
-      doc.rect(margin, y, contentWidth, 6.5, 'F');
+      doc.rect(margin, y, contentWidth, 6, 'F');
       doc.setDrawColor(226, 232, 240);
-      doc.rect(margin, y, contentWidth, 6.5, 'S');
+      doc.setLineWidth(0.2);
+      doc.rect(margin, y, contentWidth, 6, 'S');
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.2);
+      doc.setFontSize(7);
       doc.setTextColor(15, 23, 42);
-      doc.text(`[EV-${idx + 1}] (${ev.type.toUpperCase()}) ${ev.title}`, margin + 3, y + 4.3);
+      doc.text(`[EV-${idx + 1}] (${sanitizeText(ev.type).toUpperCase()}) ${sanitizeText(ev.title)}`, margin + 3, y + 3.9);
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7);
+      doc.setFontSize(6.8);
       doc.setTextColor(100, 116, 139);
-      doc.text(`Source: ${ev.source} | Status: ${(ev.status || 'verified').toUpperCase()}`, pageWidth - margin - 3, y + 4.3, { align: 'right' });
+      doc.text(`Source: ${sanitizeText(ev.source)} | Status: ${sanitizeText(ev.status || 'verified').toUpperCase()}`, pageWidth - margin - 3, y + 3.9, { align: 'right' });
 
-      y += 7.5;
+      y += 7;
     });
 
-    y += 5;
+    y += 3;
   }
 
-  // 8. OFFICIAL NOTE FOR LAW ENFORCEMENT & BANK NODAL OFFICERS
-  ensureSpace(28);
+  // -------------------------------------------------------------
+  // 8. OFFICIAL INSTITUTIONAL NOTE FOR INVESTIGATING OFFICERS
+  // -------------------------------------------------------------
+  ensureSpace(25);
   doc.setFillColor(241, 245, 249);
-  doc.roundedRect(margin, y, contentWidth, 24, 1.5, 1.5, 'F');
+  doc.roundedRect(margin, y, contentWidth, 22, 1, 1, 'F');
   doc.setDrawColor(203, 213, 225);
-  doc.roundedRect(margin, y, contentWidth, 24, 1.5, 1.5, 'S');
+  doc.setLineWidth(0.3);
+  doc.roundedRect(margin, y, contentWidth, 22, 1, 1, 'S');
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
+  doc.setFontSize(7.5);
   doc.setTextColor(15, 23, 42);
-  doc.text('OFFICIAL NOTE FOR LAW ENFORCEMENT & BANK NODAL OFFICERS:', margin + 4, y + 6);
+  doc.text('OFFICIAL NOTE FOR LAW ENFORCEMENT & BANK NODAL OFFICERS:', margin + 3.5, y + 5);
 
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.2);
+  doc.setFontSize(6.8);
   doc.setTextColor(51, 65, 85);
-  doc.text('1. This dossier is prepared by the citizen using the NIVARAN platform to consolidate fragmented transaction parameters.', margin + 4, y + 11);
-  doc.text('2. Core parameters (12-Digit UTR, timestamps, beneficiary VPA) have been verified against payment app receipts and bank debit alerts.', margin + 4, y + 15.5);
-  doc.text('3. Under the I4C 1930 / CFCFRMS framework and RBI Zero-Liability circulars, please prioritize immediate lien hold and dispute review.', margin + 4, y + 20);
+  doc.text('1. This dossier consolidates fragmented banking parameters, payment receipts, and communications for direct investigation.', margin + 3.5, y + 9.5);
+  doc.text('2. Critical 12-Digit UTRs and Beneficiary VPAs have been extracted and cross-checked against payment receipts.', margin + 3.5, y + 13.5);
+  doc.text('3. Under the I4C 1930 / CFCFRMS framework and RBI Zero-Liability circulars, please prioritize immediate lien hold and dispute recall.', margin + 3.5, y + 17.5);
 
   // Finalize footer on last page
   drawRunningFooter(currentPage);
 
-  // Save PDF with sanitized name
-  const cleanId = incident.caseId.replace(/[^a-zA-Z0-9_-]/g, '_');
-  doc.save(`NIVARAN_Case_Dossier_${cleanId}.pdf`);
+  // Save PDF
+  const cleanCaseId = sanitizeText(incident.caseId).replace(/[^a-zA-Z0-9_-]/g, '_');
+  doc.save(`NIVARAN_Case_Dossier_${cleanCaseId}.pdf`);
 }
 
 export function exportCaseJson(incident: IncidentCase) {
