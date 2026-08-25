@@ -24,10 +24,10 @@ import { SensitiveDataMask } from '../common/SensitiveDataMask';
 export const TrackCasePublic: React.FC = () => {
   const { findCaseForTracking, selectCase } = useIncident();
 
-  const [caseIdInput, setCaseIdInput] = useState('NVR-2026-00124');
+  const [caseIdInput, setCaseIdInput] = useState('NRN-2026-00124');
   const [contactInput, setContactInput] = useState('9845192837');
   const [searchedCase, setSearchedCase] = useState<IncidentCase | null>(() => {
-    return findCaseForTracking('NVR-2026-00124', '9845192837');
+    return findCaseForTracking('NRN-2026-00124', '9845192837');
   });
   const [hasSearched, setHasSearched] = useState(true);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -35,7 +35,7 @@ export const TrackCasePublic: React.FC = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!caseIdInput.trim()) {
-      setSearchError('Please enter your NIVARAN Case ID (e.g. NVR-2026-00124).');
+      setSearchError('Please enter your NIRNAY Case ID (e.g. NRN-2026-00124).');
       return;
     }
     if (!contactInput.trim()) {
@@ -68,7 +68,7 @@ export const TrackCasePublic: React.FC = () => {
           Track an Incident Case
         </h1>
         <p className="text-sm text-text-secondary mt-1 max-w-2xl leading-relaxed">
-          Verify the current status, progress timeline, and bank escalation details for any case registered on the NIVARAN platform.
+          Verify the current status, progress timeline, and bank escalation details for any case registered on the NIRNAY platform.
         </p>
       </div>
 
@@ -84,13 +84,13 @@ export const TrackCasePublic: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
           <div className="sm:col-span-6">
             <label className="block text-xs font-bold text-text-primary uppercase tracking-wide mb-1">
-              NIVARAN Case Identifier *
+              NIRNAY Case Identifier *
             </label>
             <input
               type="text"
               value={caseIdInput}
               onChange={(e) => setCaseIdInput(e.target.value)}
-              placeholder="e.g. NVR-2026-00124"
+              placeholder="e.g. NRN-2026-00124"
               className="w-full bg-surface-subtle border border-surface-border rounded-lg px-3.5 py-2.5 text-sm font-mono font-bold text-text-primary outline-none focus:border-brand-primary uppercase"
               required
             />
@@ -117,24 +117,24 @@ export const TrackCasePublic: React.FC = () => {
             <span className="text-text-muted text-[11px] font-mono">Quick test:</span>
             <button
               type="button"
-              onClick={() => loadSample('NVR-2026-00124', '9845192837')}
+              onClick={() => loadSample('NRN-2026-00124', '9845192837')}
               className="px-2.5 py-1 rounded bg-surface-subtle hover:bg-surface-elevated border border-surface-border font-mono text-[11px] text-text-secondary"
             >
-              Demo 1: NVR-2026-00124 (₹18.5k)
+              Demo 1: NRN-2026-00124 (₹18.5k)
             </button>
             <button
               type="button"
-              onClick={() => loadSample('NVR-2026-00089', '9820144819')}
+              onClick={() => loadSample('NRN-2026-00089', '9820144819')}
               className="px-2.5 py-1 rounded bg-surface-subtle hover:bg-surface-elevated border border-surface-border font-mono text-[11px] text-text-secondary"
             >
-              Demo 2: NVR-2026-00089 (₹7.2k)
+              Demo 2: NRN-2026-00089 (₹7.2k)
             </button>
             <button
               type="button"
-              onClick={() => loadSample('NVR-2026-00052', '9711239182')}
+              onClick={() => loadSample('NRN-2026-00052', '9711239182')}
               className="px-2.5 py-1 rounded bg-surface-subtle hover:bg-surface-elevated border border-surface-border font-mono text-[11px] text-text-secondary"
             >
-              Demo 3: NVR-2026-00052 (₹65k)
+              Demo 3: NRN-2026-00052 (₹65k)
             </button>
           </div>
 

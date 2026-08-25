@@ -19,7 +19,7 @@ export type DataSourceLabel =
   | 'OCR EXTRACTED'
   | 'CASE TOOL'
   | 'DOCUMENT EXTRACTED'
-  | 'NIVARAN NETWORK'
+  | 'NIRNAY NETWORK'
   | 'EXTERNAL RESPONSE'
   | 'EXTERNALLY VERIFIED';
 
@@ -345,7 +345,7 @@ export interface NotificationItem {
 export type NivaranToolVerdict =
   | 'NO_KNOWN_MATCH'
   | 'POTENTIAL_RISK_SIGNALS'
-  | 'REPORTED_IN_NIVARAN'
+  | 'REPORTED_IN_NIRNAY'
   | 'INSUFFICIENT_INFORMATION'
   | 'HIGH_RISK_ALERT'
   | 'PARSED_TRANSACTION';

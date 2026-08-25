@@ -147,7 +147,7 @@ export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   });
 
   const [activeCaseId, setActiveCaseId] = useState<string>(() => {
-    return cases[0]?.caseId || 'NVR-2026-00124';
+    return cases[0]?.caseId || 'NRN-2026-00124';
   });
 
   // Demo Session Flag (user requested: show demo card on home only if user clicked run demo or created case)
@@ -607,7 +607,7 @@ export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Submit Draft to Create a Real Case
   const submitNewCaseFromDraft = (): string => {
     const randomNum = Math.floor(10000 + Math.random() * 90000);
-    const newCaseId = `NVR-2026-${randomNum}`;
+    const newCaseId = `NRN-2026-${randomNum}`;
     const nowIso = new Date().toISOString();
     const nowReadable = `${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} · ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`;
 

@@ -52,7 +52,7 @@ export const UserDashboard: React.FC = () => {
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-xs font-mono font-bold text-brand-primary uppercase">
             <Shield size={14} />
-            <span>NIVARAN CASE INTELLIGENCE DASHBOARD</span>
+            <span>NIRNAY CASE INTELLIGENCE DASHBOARD</span>
           </div>
           <h1 className="text-2xl font-display font-extrabold text-text-primary">
             My Cases{user ? ` &bull; ${user.name}` : ''}
@@ -216,7 +216,7 @@ export const UserDashboard: React.FC = () => {
                       {/* Middle Data Stats */}
                       <div className="p-3 rounded-lg bg-surface-subtle border border-surface-border space-y-1.5 text-xs font-mono">
                         <div className="flex justify-between items-center">
-                          <span className="text-text-muted text-[11px]">Nivaran Case Readiness:</span>
+                          <span className="text-text-muted text-[11px]">Nirnay Case Readiness:</span>
                           <span className="font-bold text-brand-primary text-xs">
                             {readiness.availableCount} / {readiness.totalCount} ({readiness.percentage}%)
                           </span>

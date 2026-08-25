@@ -55,7 +55,7 @@ export interface SecureProcessingProvider {
  */
 export class MockSecureProcessingProvider implements SecureProcessingProvider {
   getProviderName(): string {
-    return 'Nivaran Mock Enclave Adapter (Demo / Architecture Mode)';
+    return 'Nirnay Mock Enclave Adapter (Demo / Architecture Mode)';
   }
 
   getAttestationReport(): AttestationStatusReport {

@@ -84,14 +84,14 @@ export const Header: React.FC = () => {
           <button
             onClick={() => { setActiveTab('home'); setMobileMenuOpen(false); }}
             className="flex items-center gap-2.5 focus:outline-none group shrink-0"
-            aria-label="NIVARAN Home"
+            aria-label="NIRNAY Home"
           >
             <div className="h-9 w-9 rounded-xl bg-brand-primary text-white flex items-center justify-center shadow-subtle group-hover:scale-105 transition-transform">
               <Shield size={20} className="stroke-[2.2]" />
             </div>
             <div className="text-left">
               <div className="font-display text-base font-extrabold tracking-tight text-slate-900 leading-none">
-                NIVARAN
+                NIRNAY
               </div>
               <div className="text-[10px] font-mono text-brand-primary font-semibold tracking-wider uppercase mt-0.5">
                 CASE INTELLIGENCE
@@ -197,7 +197,7 @@ export const Header: React.FC = () => {
             <div className="flex items-center justify-between pb-3 border-b border-surface-border">
               <div className="flex items-center gap-2">
                 <Shield size={18} className="text-brand-primary" />
-                <span className="font-display font-bold text-slate-900">NIVARAN Case Intelligence</span>
+                <span className="font-display font-bold text-slate-900">NIRNAY Case Intelligence</span>
               </div>
               <button
                 onClick={() => setMobileMenuOpen(false)}

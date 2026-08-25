@@ -20,7 +20,7 @@ export const Footer: React.FC = () => {
                   <Shield size={16} />
                 </div>
                 <span className="font-display font-extrabold text-base text-text-primary tracking-tight">
-                  NIVARAN
+                  NIRNAY
                 </span>
               </div>
               <p className="text-xs text-text-muted leading-relaxed">
@@ -116,7 +116,7 @@ export const Footer: React.FC = () => {
                     onClick={() => setActiveTab('tools')}
                     className="text-text-secondary hover:text-brand-primary text-left transition-colors flex items-center gap-1.5"
                   >
-                    <span>&bull; Nivaran Mini-Tools</span>
+                    <span>&bull; Nirnay Mini-Tools</span>
                   </button>
                 </li>
                 <li>
@@ -142,7 +142,7 @@ export const Footer: React.FC = () => {
                 <span>ECOSYSTEM NOTICE</span>
               </div>
               <p className="text-[11px] text-text-muted leading-relaxed">
-                Official systems handle reporting and investigation. Nivaran helps organize the information surrounding your case. Nivaran does not replace official statutory reports on cybercrime.gov.in or formal instructions from your bank.
+                Official systems handle reporting and investigation. Nirnay helps organize the information surrounding your case. Nirnay does not replace official statutory reports on cybercrime.gov.in or formal instructions from your bank.
               </p>
             </div>
             <div className="pt-2 border-t border-surface-border/60 flex items-center justify-between text-[10px] font-mono text-brand-primary">
@@ -156,7 +156,7 @@ export const Footer: React.FC = () => {
         {/* Bottom Copyright & Status Bar */}
         <div className="pt-4 border-t border-surface-border flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-text-muted">
           <div>
-            &copy; {new Date().getFullYear()} NIVARAN &bull; Privacy-Preserving Fraud Case Intelligence.
+            &copy; {new Date().getFullYear()} NIRNAY &bull; Privacy-Preserving Fraud Case Intelligence.
           </div>
           <div className="flex items-center gap-4 font-mono text-[11px]">
             <span className="text-brand-primary flex items-center gap-1 font-semibold">

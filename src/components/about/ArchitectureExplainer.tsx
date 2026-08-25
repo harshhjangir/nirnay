@@ -39,10 +39,10 @@ export const ArchitectureExplainer: React.FC = () => {
           SYSTEM ARCHITECTURE &bull; PRODUCT DIFFERENTIATION
         </div>
         <h1 className="text-3xl sm:text-4xl font-display font-extrabold text-text-primary tracking-tight">
-          How Nivaran Works
+          How Nirnay Works
         </h1>
         <p className="text-sm text-text-secondary mt-2 max-w-2xl leading-relaxed font-sans">
-          Nivaran is a <strong>privacy-preserving fraud case intelligence platform</strong>. Sits before and around official Indian reporting channels (NCRP, 1930, banks) to continuously organize evidence and coordinate responses.
+          Nirnay is a <strong>privacy-preserving fraud case intelligence platform</strong>. Sits before and around official Indian reporting channels (NCRP, 1930, banks) to continuously organize evidence and coordinate responses.
         </p>
       </div>
 
@@ -50,18 +50,18 @@ export const ArchitectureExplainer: React.FC = () => {
       <div className="p-6 rounded-card-lg bg-surface border border-surface-border shadow-card space-y-5">
         <div className="flex items-center gap-2 text-xs font-mono font-bold text-brand-primary uppercase tracking-wide border-b border-surface-border/60 pb-3">
           <Shield size={16} />
-          <span>Product Positioning: Nivaran vs. Official Channels</span>
+          <span>Product Positioning: Nirnay vs. Official Channels</span>
         </div>
 
         <div className="p-4 rounded-lg bg-surface-subtle border border-surface-border text-xs text-text-secondary leading-relaxed font-sans italic text-center">
-          &ldquo;Official systems handle reporting and investigation. Nivaran helps organise the information surrounding your case.&rdquo;
+          &ldquo;Official systems handle reporting and investigation. Nirnay helps organise the information surrounding your case.&rdquo;
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-sans">
           <div className="p-4 rounded-lg bg-brand-soft border border-brand-primary/20 space-y-2">
             <div className="font-mono font-bold text-brand-primary uppercase flex items-center gap-1.5">
               <Layers size={14} />
-              <span>NIVARAN CASE INTELLIGENCE</span>
+              <span>NIRNAY CASE INTELLIGENCE</span>
             </div>
             <ul className="space-y-1 text-text-secondary">
               <li>&bull; Evidence capture from multiple documents</li>

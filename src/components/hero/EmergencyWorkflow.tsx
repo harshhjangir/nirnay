@@ -28,14 +28,14 @@ export const EmergencyWorkflow: React.FC = () => {
   const { setActiveTab, setIntakeStep, selectCase, activeCase } = useIncident();
   const [activeStepModal, setActiveStepModal] = useState<number | null>(null);
 
-  // 7-Step Nivaran Core Journey (Specification #2)
+  // 7-Step Nirnay Core Journey (Specification #2)
   const journeySteps = [
     {
       step: '01',
       title: 'CAPTURE',
       tag: 'EVIDENCE-FIRST',
       desc: 'Start with whatever evidence you have: payment screenshot, bank SMS, statement, WhatsApp chat, or email.',
-      detail: 'No long manual forms required up front. Nivaran accepts screenshots, PDF statements, and raw transaction SMS text.'
+      detail: 'No long manual forms required up front. Nirnay accepts screenshots, PDF statements, and raw transaction SMS text.'
     },
     {
       step: '02',
@@ -49,7 +49,7 @@ export const EmergencyWorkflow: React.FC = () => {
       title: 'VERIFY',
       tag: 'NO BLIND OCR',
       desc: 'Confirm extracted fields directly. Every single parameter is inspectable and user-editable.',
-      detail: 'Nivaran marks fields with confidence tags ("Looks clear", "Please verify"). Direct inline editing ensures total accuracy.'
+      detail: 'Nirnay marks fields with confidence tags ("Looks clear", "Please verify"). Direct inline editing ensures total accuracy.'
     },
     {
       step: '04',
@@ -62,7 +62,7 @@ export const EmergencyWorkflow: React.FC = () => {
       step: '05',
       title: 'PREPARE',
       tag: 'CASE DOSSIER',
-      desc: 'Builds a standardized case record with Nivaran Case Readiness scoring and calling scripts.',
+      desc: 'Builds a standardized case record with Nirnay Case Readiness scoring and calling scripts.',
       detail: 'Generates word-for-word scripts for 1930 and bank helplines with exact 12-digit UTR and bank details ready.'
     },
     {
@@ -76,7 +76,7 @@ export const EmergencyWorkflow: React.FC = () => {
       step: '07',
       title: 'CONTINUE',
       tag: 'CASE MEMORY',
-      desc: 'Upload incoming bank or NCRP responses. Nivaran explains what changed and identifies the next action.',
+      desc: 'Upload incoming bank or NCRP responses. Nirnay explains what changed and identifies the next action.',
       detail: 'Interprets bank rejection letters, compares against case evidence, and provides structured escalation ladder steps.'
     }
   ];
@@ -88,13 +88,13 @@ export const EmergencyWorkflow: React.FC = () => {
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-2">
           <div className="text-xs font-mono font-bold text-brand-primary uppercase tracking-wider">
-            THE NIVARAN CASE INTELLIGENCE LIFECYCLE
+            THE NIRNAY CASE INTELLIGENCE LIFECYCLE
           </div>
           <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-text-primary">
             One Fraud &bull; One Case &bull; One Continuous Record
           </h2>
           <p className="text-sm text-text-secondary leading-relaxed">
-            Instead of starting from scratch at every helpline, Nivaran acts as your persistent fraud case intelligence layer.
+            Instead of starting from scratch at every helpline, Nirnay acts as your persistent fraud case intelligence layer.
           </p>
         </div>
 
@@ -125,13 +125,13 @@ export const EmergencyWorkflow: React.FC = () => {
           ))}
         </div>
 
-        {/* Nivaran vs Official Channels Ecosystem Box (Specification #24) */}
+        {/* Nirnay vs Official Channels Ecosystem Box (Specification #24) */}
         <div className="p-6 rounded-card-lg bg-surface border border-surface-border shadow-card space-y-6">
           <div className="flex items-center justify-between flex-wrap gap-2 border-b border-surface-border pb-3">
             <div className="flex items-center gap-2">
               <Shield size={16} className="text-brand-primary" />
               <span className="text-xs font-mono font-bold text-text-primary uppercase tracking-wide">
-                Ecosystem Architecture: How Nivaran Coordinates with Official Infrastructure
+                Ecosystem Architecture: How Nirnay Coordinates with Official Infrastructure
               </span>
             </div>
             <span className="text-[11px] font-mono text-text-muted">
@@ -141,11 +141,11 @@ export const EmergencyWorkflow: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
             
-            {/* Left: Nivaran's Role */}
+            {/* Left: Nirnay's Role */}
             <div className="md:col-span-6 p-4 rounded-lg bg-brand-soft border border-brand-primary/20 space-y-2.5">
               <div className="flex items-center gap-2 text-xs font-bold text-brand-primary font-mono uppercase">
                 <Layers size={15} />
-                <span>NIVARAN (Case Intelligence Layer)</span>
+                <span>NIRNAY (Case Intelligence Layer)</span>
               </div>
               <p className="text-xs text-text-secondary leading-relaxed font-sans">
                 Turns scattered receipts, WhatsApp threats, and bank SMS alerts into a verified, reconciled fraud dossier. Maintains case memory, detects discrepancies, and tracks external responses.
@@ -178,7 +178,7 @@ export const EmergencyWorkflow: React.FC = () => {
           </div>
 
           <div className="text-center text-xs text-text-muted italic">
-            “Official systems handle reporting and investigation. Nivaran helps organise the information surrounding your case.”
+            “Official systems handle reporting and investigation. Nirnay helps organise the information surrounding your case.”
           </div>
         </div>
 

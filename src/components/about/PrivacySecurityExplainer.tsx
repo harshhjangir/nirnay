@@ -45,7 +45,7 @@ export const PrivacySecurityExplainer: React.FC = () => {
           Privacy &amp; Security Architecture
         </h1>
         <p className="text-sm text-text-secondary max-w-3xl leading-relaxed font-sans">
-          Your financial cybercrime documents contain highly sensitive personal and transaction data. NIVARAN is engineered around a strict data minimization and confidential processing architecture.
+          Your financial cybercrime documents contain highly sensitive personal and transaction data. NIRNAY is engineered around a strict data minimization and confidential processing architecture.
         </p>
       </div>
 
@@ -218,7 +218,7 @@ export const PrivacySecurityExplainer: React.FC = () => {
           <span>AUTHENTICATION CREDENTIALS ARE STRICTLY PROHIBITED</span>
         </div>
         <p className="text-text-primary font-sans leading-relaxed">
-          NIVARAN will <strong>never ask for, store, or process your OTPs, UPI PINs, netbanking passwords, or card CVV numbers</strong>. Any automated attempts to input such credentials into case descriptions are sanitized and rejected by our regex data minimizer before processing.
+          NIRNAY will <strong>never ask for, store, or process your OTPs, UPI PINs, netbanking passwords, or card CVV numbers</strong>. Any automated attempts to input such credentials into case descriptions are sanitized and rejected by our regex data minimizer before processing.
         </p>
       </div>
 
@@ -253,7 +253,7 @@ export const PrivacySecurityExplainer: React.FC = () => {
                 Hardware Enclave Target Compatibility
               </h4>
               <p className="text-text-secondary leading-relaxed">
-                The NIVARAN secure processing interface (`SecureProcessingProvider`) is designed to run inside cloud confidential computing hardware environments without code refactoring:
+                The NIRNAY secure processing interface (`SecureProcessingProvider`) is designed to run inside cloud confidential computing hardware environments without code refactoring:
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 font-mono text-[11px]">
                 <div className="p-3 rounded bg-surface border border-surface-border space-y-1">

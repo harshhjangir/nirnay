@@ -53,23 +53,23 @@ export function checkUpiIdTool(rawInput: string): NivaranToolResult {
       verdict = 'POTENTIAL_RISK_SIGNALS';
     }
 
-    // Check against Nivaran network collective intelligence
+    // Check against Nirnay network collective intelligence
     if (query === 'discom.billupdate.982@okaxis' || query.includes('discom.bill')) {
       matchingReportsCount = 17;
-      relatedCases.push('NVR-2026-00124', 'NVR-2026-00089', 'NVR-2026-00062');
+      relatedCases.push('NRN-2026-00124', 'NRN-2026-00089', 'NRN-2026-00062');
       verdict = 'HIGH_RISK_ALERT';
       signals.push({
         type: 'critical',
-        label: 'Reported in Nivaran (17 Matching Reports)',
+        label: 'Reported in Nirnay (17 Matching Reports)',
         description: 'This exact UPI handle matches 17 reports linked to the Electricity DISCOM Impersonation Campaign.'
       });
     } else if (query === 'airhelp.refunds.912@ybl' || query.includes('airhelp.refunds')) {
       matchingReportsCount = 8;
-      relatedCases.push('NVR-2026-00041', 'NVR-2026-00033');
+      relatedCases.push('NRN-2026-00041', 'NRN-2026-00033');
       verdict = 'HIGH_RISK_ALERT';
       signals.push({
         type: 'critical',
-        label: 'Reported in Nivaran (8 Matching Reports)',
+        label: 'Reported in Nirnay (8 Matching Reports)',
         description: 'Associated with fake customer care collect requests on search engines.'
       });
     } else if (query.includes('vip.merchant') || query.includes('telegram.task')) {
@@ -77,8 +77,8 @@ export function checkUpiIdTool(rawInput: string): NivaranToolResult {
       verdict = 'HIGH_RISK_ALERT';
       signals.push({
         type: 'critical',
-        label: 'Reported in Nivaran (29 Matching Reports)',
-        description: 'Identified as rotating deposit handle in task-based rating scams.'
+        label: 'Reported in Nirnay (29 Matching Reports)',
+        description: 'Linked to syndicated Telegram Task and YouTube video rating fraud network.'
       });
     }
   }
@@ -137,14 +137,14 @@ export function checkPhoneNumberTool(rawInput: string): NivaranToolResult {
     };
   }
 
-  // Check known Nivaran scam reports
+  // Check known Nirnay scam reports
   if (cleanPhone.includes('7019284920') || cleanPhone.endsWith('7019284920')) {
     matchingReportsCount = 17;
-    relatedCases.push('NVR-2026-00124', 'NVR-2026-00089');
+    relatedCases.push('NRN-2026-00124', 'NRN-2026-00089');
     verdict = 'HIGH_RISK_ALERT';
     signals.push({
       type: 'critical',
-      label: 'Reported in 17 Nivaran Cases',
+      label: 'Reported in 17 Nirnay Cases',
       description: 'Repeatedly reported as caller in State Electricity DISCOM disconnection scam.'
     });
     signals.push({
@@ -157,14 +157,14 @@ export function checkPhoneNumberTool(rawInput: string): NivaranToolResult {
     verdict = 'HIGH_RISK_ALERT';
     signals.push({
       type: 'critical',
-      label: 'Reported in 8 Nivaran Cases',
+      label: 'Reported in 8 Nirnay Cases',
       description: 'Reported as fake airline customer care number placed on Google search ads.'
     });
   } else {
     signals.push({
       type: 'info',
-      label: 'No Prior Nivaran Record',
-      description: 'This number has not been previously recorded in the Nivaran collective intelligence repository.'
+      label: 'No Prior Nirnay Record',
+      description: 'This number has not been previously recorded in the Nirnay collective intelligence repository.'
     });
   }
 
@@ -174,8 +174,8 @@ export function checkPhoneNumberTool(rawInput: string): NivaranToolResult {
     timestamp: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
     query,
     summary: verdict === 'HIGH_RISK_ALERT'
-      ? `Reported in Nivaran: ${matchingReportsCount} reports match this phone number.`
-      : 'No matching reports found in Nivaran.',
+      ? `Reported in Nirnay: ${matchingReportsCount} reports match this phone number.`
+      : 'No matching reports found in Nirnay.',
     verdict,
     signals,
     disclaimer: 'Not finding a report does not establish that a phone number is legitimate. Scammers frequently cycle through fresh burner SIMs.',
@@ -254,7 +254,7 @@ export function checkWebsiteUrlTool(rawInput: string): NivaranToolResult {
     verdict = 'HIGH_RISK_ALERT';
     signals.push({
       type: 'critical',
-      label: 'Known Phishing Domain in Nivaran',
+      label: 'Known Phishing Domain in Nirnay',
       description: 'Domain recorded in 17 electricity impersonation case dossiers.'
     });
   }

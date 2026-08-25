@@ -142,7 +142,7 @@ export const NivaranToolsHub: React.FC = () => {
           SUPPORTING CASE INTELLIGENCE UTILITIES
         </div>
         <h1 className="text-3xl font-display font-extrabold text-text-primary tracking-tight">
-          Nivaran Tools
+          Nirnay Tools
         </h1>
         <p className="text-sm text-text-secondary mt-1 max-w-2xl leading-relaxed font-sans">
           Supporting evaluation tools to investigate suspect identifiers, decode transaction SMS alerts, and evaluate payment requests. <strong>Every result can be directly added to your case record.</strong>
@@ -193,7 +193,7 @@ export const NivaranToolsHub: React.FC = () => {
           <div className="space-y-1">
             <h2 className="text-lg font-bold text-text-primary">Check a UPI ID (VPA)</h2>
             <p className="text-xs text-text-secondary">
-              Analyzes format validity, institutional keyword impersonation, and matching reports in the Nivaran network.
+              Analyzes format validity, institutional keyword impersonation, and matching reports in the Nirnay network.
             </p>
           </div>
 

@@ -140,7 +140,7 @@ TRANSACTION DETAILS:
 • 12-Digit UTR / NPCI Reference: ${primaryTx?.utrNumber || '423719820491'}
 • Beneficiary UPI / Account: ${primaryTx?.recipientUpiOrAcc || 'discom.billupdate.982@okaxis'}
 • Mode: ${primaryTx?.paymentMethod || 'UPI'} via ${primaryTx?.paymentApp || 'Google Pay'}
-• NIVARAN Case Identifier: ${activeCase.caseId}
+• NIRNAY Case Identifier: ${activeCase.caseId}
 
 INCIDENT NARRATIVE:
 ${activeCase.whatHappenedSummary}
@@ -213,7 +213,7 @@ Date: ${new Date().toLocaleDateString('en-IN')}
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-xs font-mono font-bold text-brand-primary uppercase">
               <Shield size={14} />
-              <span>NIVARAN FRAUD CASE RECORD</span>
+              <span>NIRNAY FRAUD CASE RECORD</span>
               <span>&bull;</span>
               <span className="text-text-muted">Registered {new Date(activeCase.createdAt).toLocaleDateString('en-IN')}</span>
             </div>
@@ -301,7 +301,7 @@ Date: ${new Date().toLocaleDateString('en-IN')}
           <div className="space-y-0.5">
             <div className="flex items-center gap-2 text-xs font-mono font-bold text-text-primary uppercase">
               <FileCheck size={15} className="text-brand-primary" />
-              <span>NIVARAN CASE READINESS</span>
+              <span>NIRNAY CASE READINESS</span>
             </div>
             <p className="text-xs text-text-muted font-sans">
               {caseReadiness.statusMessage}

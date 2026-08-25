@@ -192,7 +192,7 @@ export const DescribeProblem: React.FC = () => {
         <div className="p-4 rounded-card bg-surface-subtle border border-surface-border space-y-2 text-xs animate-in fade-in">
           <div className="text-[11px] font-mono font-bold text-brand-primary uppercase flex items-center gap-1.5">
             <Zap size={13} />
-            <span>Nivaran Extracted Scam Factors:</span>
+            <span>Nirnay Extracted Scam Factors:</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 font-mono text-[11px]">
             {extractedSignals.map((sig, i) => (

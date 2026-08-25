@@ -129,7 +129,7 @@ export const PreventionCenter: React.FC = () => {
       {/* Top Handbook Header */}
       <div className="space-y-2">
         <div className="text-xs font-mono font-bold text-brand-primary uppercase tracking-wider">
-          NIVARAN CYBER FRAUD REFERENCE SUITE &bull; PRACTICAL SAFETY HANDBOOK
+          NIRNAY CYBER FRAUD REFERENCE SUITE &bull; PRACTICAL SAFETY HANDBOOK
         </div>
         <h1 className="text-3xl font-display font-extrabold text-text-primary tracking-tight">
           Learn &amp; Prevent Financial Cybercrime
@@ -436,7 +436,7 @@ export const PreventionCenter: React.FC = () => {
                               onClick={handleStartIncidentResponse}
                               className="px-4 py-2 rounded-lg bg-brand-primary hover:bg-brand-hover text-white font-semibold text-xs shadow-subtle transition-colors flex items-center gap-1.5"
                             >
-                              <span>Go to Nivaran Incident Response</span>
+                              <span>Go to Nirnay Incident Response</span>
                               <ArrowRight size={13} />
                             </button>
                           </div>
@@ -538,7 +538,7 @@ export const PreventionCenter: React.FC = () => {
                     className="px-4 py-2 rounded-lg bg-brand-primary text-white font-semibold text-xs shadow-subtle hover:bg-brand-hover transition-colors flex items-center gap-1.5"
                   >
                     <Zap size={14} />
-                    <span>Test this identifier in Nivaran Toolkit</span>
+                    <span>Test this identifier in Nirnay Toolkit</span>
                   </button>
                 </div>
               </div>
@@ -597,7 +597,7 @@ export const PreventionCenter: React.FC = () => {
           <div className="p-4 rounded-lg bg-surface-elevated border border-surface-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <div className="text-xs font-bold text-text-primary">Still unsure about a UPI ID, Phone Number or QR Code?</div>
-              <div className="text-[11px] text-text-muted">Use Nivaran&apos;s pre-payment check tools to inspect potential signals.</div>
+              <div className="text-[11px] text-text-muted">Use Nirnay&apos;s pre-payment check tools to inspect potential signals.</div>
             </div>
 
             <button
@@ -660,9 +660,9 @@ export const PreventionCenter: React.FC = () => {
 
           <div className="p-4 rounded-lg bg-brand-primary text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-subtle">
             <div>
-              <div className="font-bold text-sm">Step 5: Create Your Structured NIVARAN Case Dossier</div>
+              <div className="font-bold text-sm">Step 5: Create Your Structured NIRNAY Case Dossier</div>
               <div className="text-xs text-white/80 mt-0.5 font-sans">
-                Nivaran organizes evidence, extracts parameters, and prepares your bank notice &amp; NCRP filing package.
+                Nirnay organizes evidence, extracts parameters, and prepares your bank notice &amp; NCRP filing package.
               </div>
             </div>
 
@@ -743,7 +743,7 @@ export const PreventionCenter: React.FC = () => {
               Financial Fraud Terminology
             </h2>
             <p className="text-xs text-text-secondary mt-1">
-              Clear, practical explanations of key banking terms, why Nivaran needs them, and where to find them across popular payment applications.
+              Clear, practical explanations of key banking terms, why Nirnay needs them, and where to find them across popular payment applications.
             </p>
           </div>
 
@@ -798,7 +798,7 @@ export const PreventionCenter: React.FC = () => {
 
                         <div className="space-y-1">
                           <div className="font-mono font-bold text-brand-primary uppercase text-[10px]">
-                            WHY NIVARAN NEEDS IT
+                            WHY NIRNAY NEEDS IT
                           </div>
                           <p className="text-text-secondary leading-relaxed">
                             {term.whyNivaranNeedsIt}

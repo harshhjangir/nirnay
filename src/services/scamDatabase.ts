@@ -209,7 +209,7 @@ export const SCAM_DATABASE: ScamReferenceItem[] = [
       'Decline all unexpected UPI collect requests immediately.',
       'Remember: You NEVER enter your UPI PIN to receive money or refunds.',
       'If debited, note down the 12-digit UTR from your bank SMS and dial 1930 within the Golden Hour.',
-      'Create your structured NIVARAN incident dossier.'
+      'Create your structured NIRNAY incident dossier.'
     ],
     relatedTool: {
       tabId: 'upi',

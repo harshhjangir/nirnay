@@ -215,7 +215,7 @@ export function generateGenericEscalationLadder(
       title: '4. RBI Banking Ombudsman (CMS Portal)',
       authority: 'Reserve Bank of India Ombudsman (cms.rbi.org.in)',
       requiredReference: 'Bank Complaint Reference + PNO Rejection Memo',
-      requiredEvidence: ['Complete NIVARAN Case Dossier', 'Written Bank Responses', 'NCRP Acknowledgement'],
+      requiredEvidence: ['Complete NIRNAY Case Dossier', 'Written Bank Responses', 'NCRP Acknowledgement'],
       status: 'awaiting_prerequisites',
       eligibilityCheck: 'Eligible 30 days after initial bank complaint, or immediately upon receiving bank rejection notice.',
       description: 'Statutory independent banking adjudication under the Reserve Bank - Integrated Ombudsman Scheme, 2021.'

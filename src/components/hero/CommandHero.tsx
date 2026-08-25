@@ -54,20 +54,20 @@ export const CommandHero: React.FC = () => {
             {/* System Label */}
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-soft border border-brand-primary/20 text-xs font-semibold tracking-wide text-brand-primary">
               <Shield size={14} className="text-brand-primary shrink-0" />
-              <span className="truncate">NIVARAN &bull; Privacy-Preserving Fraud Case Intelligence</span>
+              <span className="truncate">NIRNAY &bull; Privacy-Preserving Fraud Case Intelligence</span>
             </div>
 
             {/* Main Headline */}
             <h1 className="text-2xl sm:text-4xl lg:text-5xl font-display font-extrabold text-text-primary tracking-tight leading-[1.15]">
               Something went wrong financially. <br />
               <span className="text-brand-primary">
-                Let Nivaran organize the case.
+                Let Nirnay organize the case.
               </span>
             </h1>
 
             {/* Supporting Copy */}
             <p className="text-sm sm:text-base text-text-secondary max-w-2xl leading-relaxed">
-              Bring together your transaction, evidence, complaint references and responses in one place. Nivaran helps identify what is missing, what conflicts, and what needs attention next.
+              Bring together your transaction, evidence, complaint references and responses in one place. Nirnay helps identify what is missing, what conflicts, and what needs attention next.
             </p>
 
             {/* Primary, Secondary, Third CTAs */}
@@ -336,7 +336,7 @@ export const CommandHero: React.FC = () => {
                   <div className="grid grid-cols-2 gap-3 pb-3 border-b border-surface-border">
                     <div>
                       <span className="text-[11px] text-text-muted uppercase font-medium block mb-0.5 font-mono">
-                        Nivaran Readiness
+                        Nirnay Readiness
                       </span>
                       <div className="flex items-center gap-2">
                         <span className="text-base font-bold font-mono text-brand-primary">

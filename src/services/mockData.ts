@@ -13,7 +13,7 @@ export const DEMO_USER: AuthUser = {
 
 // DEMO CASE 1: Electricity Impersonation Call (₹18,500)
 export const DEMO_CASE_1: IncidentCase = {
-  caseId: 'NVR-2026-00124',
+  caseId: 'NRN-2026-00124',
   userId: 'usr-demo-001',
   createdAt: '2026-08-24T10:32:00+05:30',
   updatedAt: '2026-08-24T14:20:00+05:30',
@@ -32,7 +32,7 @@ export const DEMO_CASE_1: IncidentCase = {
       label: 'Incident Reported',
       timestamp: '24 Aug 2026 · 10:32 AM',
       completed: true,
-      description: 'Incident details, disputed amounts, and initial statement recorded on NIVARAN.'
+      description: 'Incident details, disputed amounts, and initial statement recorded on NIRNAY.'
     },
     {
       step: 2,
@@ -348,7 +348,7 @@ export const DEMO_CASE_1: IncidentCase = {
       source: 'Google Pay Receipt (ev-002)',
       sourceTypeLabel: 'OCR EXTRACTED',
       matchingReportsCount: 17,
-      notes: 'Beneficiary handle used in Google Pay transfer. Matched in 17 Nivaran reports.'
+      notes: 'Beneficiary handle used in Google Pay transfer. Matched in 17 Nirnay reports.'
     },
     {
       id: 'susp-2',
@@ -373,7 +373,7 @@ export const DEMO_CASE_1: IncidentCase = {
 
 // DEMO CASE 2: Fake Airline Customer Care / Search Engine Poisoning (₹7,200)
 export const DEMO_CASE_2: IncidentCase = {
-  caseId: 'NVR-2026-00089',
+  caseId: 'NRN-2026-00089',
   userId: 'usr-demo-001',
   createdAt: '2026-08-22T16:10:00+05:30',
   updatedAt: '2026-08-23T11:20:00+05:30',
@@ -538,7 +538,7 @@ export const DEMO_CASE_2: IncidentCase = {
 
 // DEMO CASE 3: Telegram Task / Job Fraud (₹65,000)
 export const DEMO_CASE_3: IncidentCase = {
-  caseId: 'NVR-2026-00052',
+  caseId: 'NRN-2026-00052',
   userId: 'usr-demo-001',
   createdAt: '2026-08-19T14:15:00+05:30',
   updatedAt: '2026-08-20T10:00:00+05:30',
@@ -546,7 +546,7 @@ export const DEMO_CASE_3: IncidentCase = {
   statusProgress: 'under_investigation',
   nextAction: {
     title: 'File Formal Police Cyber Cell FIR with Complete Transaction Trail',
-    why: 'Loss exceeds ₹50,000 threshold. Submit the compiled multi-transaction Nivaran dossier to the Cyber Crime Police Station.',
+    why: 'Loss exceeds ₹50,000 threshold. Submit the compiled multi-transaction Nirnay dossier to the Cyber Crime Police Station.',
     actionLabel: 'Export Case PDF for Cyber Cell',
     actionTab: 'evidence',
     urgency: 'critical_now'
@@ -725,24 +725,24 @@ export const DEMO_NOTIFICATIONS: NotificationItem[] = [
     timestamp: '24 Aug 2026 · 02:00 PM',
     read: false,
     type: 'response_alert',
-    caseId: 'NVR-2026-00124'
+    caseId: 'NRN-2026-00124'
   },
   {
     id: 'notif-2',
     title: 'Possible Connected Campaign Detected',
-    message: 'Recipient handle discom.billupdate.982@okaxis matches 17 reports across the Nivaran network.',
+    message: 'Recipient handle discom.billupdate.982@okaxis matches 17 reports across the Nirnay network.',
     timestamp: '24 Aug 2026 · 01:30 PM',
     read: false,
     type: 'evidence_alert',
-    caseId: 'NVR-2026-00124'
+    caseId: 'NRN-2026-00124'
   },
   {
     id: 'notif-3',
-    title: 'Nivaran Case Readiness: 9 / 10 Items Ready',
+    title: 'Nirnay Case Readiness: 9 / 10 Items Ready',
     message: 'Your case contains full evidence and official references. Keep response records updated.',
     timestamp: '24 Aug 2026 · 11:15 AM',
     read: false,
     type: 'action_reminder',
-    caseId: 'NVR-2026-00124'
+    caseId: 'NRN-2026-00124'
   }
 ];

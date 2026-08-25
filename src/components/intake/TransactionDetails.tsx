@@ -310,7 +310,7 @@ export const TransactionDetails: React.FC = () => {
           Start with your payment evidence
         </h2>
         <p className="text-sm text-text-secondary mt-1">
-          Upload a screenshot of your payment receipt, bank SMS, or statement. NIVARAN will automatically extract the transaction parameters so you don&apos;t have to retype them.
+          Upload a screenshot of your payment receipt, bank SMS, or statement. NIRNAY will automatically extract the transaction parameters so you don&apos;t have to retype them.
         </p>
       </div>
 
@@ -931,7 +931,7 @@ export const TransactionDetails: React.FC = () => {
                 </p>
 
                 <div className="p-3 rounded-lg bg-surface-subtle border border-surface-border space-y-1">
-                  <div className="font-bold font-mono text-text-primary text-[10px] uppercase">WHY NIVARAN NEEDS IT:</div>
+                  <div className="font-bold font-mono text-text-primary text-[10px] uppercase">WHY NIRNAY NEEDS IT:</div>
                   <p className="text-text-secondary">{term.whyNivaranNeedsIt}</p>
                 </div>
 

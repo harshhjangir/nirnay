@@ -50,7 +50,7 @@ export const ReviewSubmission: React.FC = () => {
           Review Case Information
         </h2>
         <p className="text-sm text-text-secondary mt-1">
-          Verify all extracted and confirmed details. Nivaran will structure this into your continuous fraud case record.
+          Verify all extracted and confirmed details. Nirnay will structure this into your continuous fraud case record.
         </p>
       </div>
 
@@ -229,7 +229,7 @@ export const ReviewSubmission: React.FC = () => {
             className="mt-0.5 h-4 w-4 rounded text-brand-primary border-surface-border focus:ring-brand-primary"
           />
           <span className="text-text-secondary leading-relaxed font-sans">
-            I confirm that the evidence and transaction parameters provided are truthful records to be organized into my Nivaran fraud case intelligence file.
+            I confirm that the evidence and transaction parameters provided are truthful records to be organized into my Nirnay fraud case intelligence file.
           </span>
         </label>
       </div>

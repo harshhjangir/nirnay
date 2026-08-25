@@ -1,4 +1,4 @@
-# NIVARAN: Confidential Computing & TEE Privacy Architecture
+# NIRNAY: Confidential Computing & TEE Privacy Architecture
 
 ## 1. Executive Summary
 
@@ -9,7 +9,7 @@ Financial cybercrime first-response platforms handle some of the most sensitive 
 * Threat chat transcripts (WhatsApp, SMS, Telegram)
 * Personal identity references (NCRP acknowledgement slips, police complaint copies)
 
-The **NIVARAN Privacy & Processing Architecture** is engineered to decouple sensitive evidence extraction and intelligence reasoning from untrusted frontend or multi-tenant infrastructure using **Trusted Execution Environment (TEE) / Confidential Computing** principles and strict **Data Minimization**.
+The **NIRNAY Privacy & Processing Architecture** is engineered to decouple sensitive evidence extraction and intelligence reasoning from untrusted frontend or multi-tenant infrastructure using **Trusted Execution Environment (TEE) / Confidential Computing** principles and strict **Data Minimization**.
 
 ---
 
@@ -25,7 +25,7 @@ The **NIVARAN Privacy & Processing Architecture** is engineered to decouple sens
                                      │ Encrypted HTTPS / TLS 1.3
                                      ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                    NIVARAN SECURE PROCESSING GATEWAY                    │
+│                    NIRNAY SECURE PROCESSING GATEWAY                     │
 │  • API endpoint & transport routing                                     │
 │  • Rate limiting & DoS defense                                          │
 └────────────────────────────────────┬────────────────────────────────────┘
@@ -63,7 +63,7 @@ The **NIVARAN Privacy & Processing Architecture** is engineered to decouple sens
 
 ## 3. Threat Model & Protections
 
-| Threat Vector | Traditional Risk | NIVARAN TEE Mitigation |
+| Threat Vector | Traditional Risk | NIRNAY TEE Mitigation |
 | :--- | :--- | :--- |
 | **Hypervisor / Host Admin Compromise** | Malicious cloud admins inspect VM memory | Hardware memory encryption (AMD SEV-SNP / Nitro) makes RAM unreadable to hypervisors. |
 | **Raw Document Storage Breaches** | Unencrypted screenshots stored on S3/DB | Raw evidence is processed entirely in ephemeral enclave memory and purged after structured extraction. |
@@ -77,7 +77,7 @@ The **NIVARAN Privacy & Processing Architecture** is engineered to decouple sens
 In production deployment, the enclave must cryptographically prove its software integrity before decrypting user files:
 
 1. **Attestation Document Generation**: The hardware security processor generates an attestation document containing cryptographic hash measurements of the enclave image (PCR0: Enclave Image Hash, PCR1: Kernel Hash, PCR2: App Hash).
-2. **KMS Policy Verification**: The Cloud Key Management Service (AWS KMS, Azure Key Vault, or GCP Cloud KMS) validates that the PCR measurements match the authorized NIVARAN release build.
+2. **KMS Policy Verification**: The Cloud Key Management Service (AWS KMS, Azure Key Vault, or GCP Cloud KMS) validates that the PCR measurements match the authorized NIRNAY release build.
 3. **Attested Key Release**: KMS releases the private decryption key exclusively to the attested enclave memory via a secure hardware channel.
 4. **Ephemerality**: Once processing completes, memory is zeroed out.
 
@@ -85,7 +85,7 @@ In production deployment, the enclave must cryptographically prove its software 
 
 ## 5. Data Minimization Protocol
 
-NIVARAN enforces a strict 4-stage minimization pipeline before any AI reasoning occurs:
+NIRNAY enforces a strict 4-stage minimization pipeline before any AI reasoning occurs:
 
 ```typescript
 // 1. Account Number Masking

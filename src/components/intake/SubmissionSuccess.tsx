@@ -34,13 +34,13 @@ export const SubmissionSuccess: React.FC = () => {
 
         <div>
           <span className="text-xs font-mono font-bold text-brand-green uppercase tracking-wider">
-            FRAUD CASE ORGANIZED &bull; NIVARAN INTELLIGENCE ACTIVE
+            FRAUD CASE ORGANIZED &bull; NIRNAY INTELLIGENCE ACTIVE
           </span>
           <h2 className="text-2xl font-display font-extrabold text-text-primary mt-1">
             Your Case Dossier is Ready
           </h2>
           <p className="text-xs text-text-secondary mt-1">
-            Nivaran has extracted, verified, and structured your evidence into a continuous case file.
+            Nirnay has extracted, verified, and structured your evidence into a continuous case file.
           </p>
         </div>
 

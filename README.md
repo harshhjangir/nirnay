@@ -1,13 +1,13 @@
-# NIVARAN — Privacy-Preserving Fraud Case Intelligence
+# NIRNAY — Privacy-Preserving Fraud Case Intelligence
 
 > **Core Purpose:**  
-> “Nivaran turns scattered evidence, transactions, identifiers, complaint references, and authority responses into one continuously organized, evolving fraud case record.”
+> “Nirnay turns scattered evidence, transactions, identifiers, complaint references, and authority responses into one continuously organized, evolving fraud case record.”
 
-Nivaran is a civic fraud case intelligence and evidence organization platform designed to support financial scam victims throughout the entire lifecycle of an incident. It manages everything surrounding a fraud report, sitting before, alongside, and after statutory reporting infrastructure.
+Nirnay is a civic fraud case intelligence and evidence organization platform designed to support financial scam victims throughout the entire lifecycle of an incident. It manages everything surrounding a fraud report, sitting before, alongside, and after statutory reporting infrastructure.
 
 ---
 
-## 1. The Problem Nivaran Solves
+## 1. The Problem Nirnay Solves
 
 Financial fraud in India (UPI scams, impersonation calls, fake customer care, task fraud, digital arrest coercion) leaves victims dealing with a chaotic, fragmented reporting landscape.
 
@@ -40,7 +40,7 @@ Financial fraud in India (UPI scams, impersonation calls, fake customer care, ta
 
 ## 2. Institutional Role & Ecosystem Boundaries
 
-Nivaran does **not** replace statutory government and regulatory portals:
+Nirnay does **not** replace statutory government and regulatory portals:
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────────────┐
@@ -54,7 +54,7 @@ Nivaran does **not** replace statutory government and regulatory portals:
 │ Police Cyber Cell / Stations  │ Criminal investigation, chargesheet, asset attachment    │
 │ RBI CMS Portal                │ Statutory Ombudsman adjudication under 2021 scheme       │
 ├───────────────────────────────┴──────────────────────────────────────────────────────────┤
-│ NIVARAN MANDATE: Continuous case memory, cross-evidence reconciliation, readiness audit, │
+│ NIRNAY MANDATE: Continuous case memory, cross-evidence reconciliation, readiness audit,  │
 │ response interpretation, and preparation of complete legal-grade case dossiers.          │
 └──────────────────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -65,7 +65,7 @@ Nivaran does **not** replace statutory government and regulatory portals:
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────────────┐
-│                               NIVARAN SYSTEM ARCHITECTURE                                │
+│                                NIRNAY SYSTEM ARCHITECTURE                                │
 ├──────────────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                          │
 │  [1. INTAKE & EXTRACTION]    [2. RECONCILIATION]          [3. READINESS & SCORING]       │
@@ -117,7 +117,7 @@ Calculates dynamic percentage readiness before external filing:
 10. Official Statutory Reference (1930 Helpline / NCRP Acknowledgement)
 
 ### IV. Institutional Response Interpreter & Grievance Ladder
-When a bank or authority responds (e.g. rejecting a dispute citing PIN entry), Nivaran generates an automated 4-part breakdown:
+When a bank or authority responds (e.g. rejecting a dispute citing PIN entry), Nirnay generates an automated 4-part breakdown:
 1. **What They Said:** Plain-language extraction of the institution's formal decision and stated reason.
 2. **What This Relates To:** Verification of the exact amount, UTR, and beneficiary cited in the response against case records.
 3. **What Case Record Contains:** Highlights counter-evidence already present in the dossier (e.g. proof of social engineering, fake APK download logs, impersonation chat transcripts).
@@ -137,10 +137,10 @@ Maintains a verifiable chronological sequence of events where every item is tagg
 - `[EXTERNAL RESPONSE]` — Formal acknowledgements, tickets, or decisions from banks or 1930.
 
 ### VI. Syndicated Fraud Network & Campaign Intelligence
-- Matches suspect identifiers (UPI handles, caller numbers, phishing URLs) against known patterns in the Nivaran intelligence database.
+- Matches suspect identifiers (UPI handles, caller numbers, phishing URLs) against known patterns in the Nirnay intelligence database.
 - Identifies organized fraud campaigns (e.g. utility bill disconnection rings, Google SEO support spoofing, Telegram task networks) to provide victims with collective context.
 
-### VII. Nivaran Mini-Intelligence Toolkit
+### VII. Nirnay Mini-Intelligence Toolkit
 Pre-incident and post-incident verification utilities:
 - **UPI VPA Check:** Evaluates risk signals in beneficiary virtual payment addresses.
 - **Phone Caller Check:** Evaluates VOIP patterns, telemarketing prefixes, and reported impersonation signals.
@@ -152,7 +152,7 @@ Pre-incident and post-incident verification utilities:
 - **Direct Case Attachment:** Any tool finding can be attached with 1-click into the active case evidence ledger.
 
 ### VIII. Public Case Tracking & Multi-Reference Manager
-- Allows victims to track resolution progress using their unique Nivaran Case ID (`NVR-2026-XXXXX`) and verified contact details.
+- Allows victims to track resolution progress using their unique Nirnay Case ID (`NRN-2026-XXXXX`) and verified contact details.
 - Maintains a unified record of all external reference numbers (1930 / I4C, Bank ticket, NCRP registration, Police station reference) in one centralized view.
 
 ### IX. Privacy, Security & Client-Side Isolation
@@ -226,9 +226,9 @@ To enable GitHub Pages in your fork:
 
 ## 8. Summary of Product Impact
 
-Nivaran bridges the gap between distressed citizens and the formal cybercrime reporting infrastructure:
+Nirnay bridges the gap between distressed citizens and the formal cybercrime reporting infrastructure:
 
-| Feature | Without Nivaran | With Nivaran |
+| Feature | Without Nirnay | With Nirnay |
 | :--- | :--- | :--- |
 | **Golden Hour Response** | Panic, forgotten UTRs, delayed 1930 calls | Structured 1930 scripts, instant UTR validation |
 | **Evidence Organization** | Scattered screenshots, chats, and SMS | Chronological timeline with verified provenance tags |

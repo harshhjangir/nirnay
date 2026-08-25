@@ -61,7 +61,7 @@ export const LoginModal: React.FC = () => {
     <Modal
       isOpen={isLoginModalOpen}
       onClose={closeLoginModal}
-      title={authMode === 'register' ? 'Create Citizen Account' : 'Sign In to NIVARAN'}
+      title={authMode === 'register' ? 'Create Citizen Account' : 'Sign In to NIRNAY'}
       subtitle={authMode === 'register' ? 'Register to manage and track reported financial incidents' : 'Access your active fraud cases and track official inquiry progression'}
       maxWidth="sm"
     >

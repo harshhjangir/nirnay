@@ -21,7 +21,7 @@ function sanitizeText(str: string | undefined | null): string {
 }
 
 /**
- * Enhanced PDF Case Dossier Generator for NIVARAN
+ * Enhanced PDF Case Dossier Generator for NIRNAY
  * Structured, multi-page, non-overlapping institutional document formatted for:
  * - 1930 Helpline / I4C CFCFRMS Nodal Officers
  * - Bank Fraud Cells & Principal Nodal Grievance Desks
@@ -55,7 +55,7 @@ export function generateCasePdf(incident: IncidentCase) {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(13);
       doc.setTextColor(255, 255, 255);
-      doc.text('NIVARAN', margin, 11);
+      doc.text('NIRNAY', margin, 11);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
@@ -94,7 +94,7 @@ export function generateCasePdf(incident: IncidentCase) {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(7.5);
       doc.setTextColor(15, 23, 42);
-      doc.text('NIVARAN FRAUD CASE DOSSIER', margin, 8);
+      doc.text('NIRNAY FRAUD CASE DOSSIER', margin, 8);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7.5);
@@ -116,7 +116,7 @@ export function generateCasePdf(incident: IncidentCase) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(6.8);
     doc.setTextColor(148, 163, 184);
-    doc.text('NIVARAN Civic Fraud Intelligence Platform. Prepared for statutory submission to 1930 / cybercrime.gov.in / Bank.', margin, footerY);
+    doc.text('NIRNAY Civic Fraud Intelligence Platform. Prepared for statutory submission to 1930 / cybercrime.gov.in / Bank.', margin, footerY);
 
     doc.setFont('helvetica', 'bold');
     doc.text(`Page ${pageNum}`, pageWidth - margin, footerY, { align: 'right' });
@@ -342,13 +342,12 @@ export function generateCasePdf(incident: IncidentCase) {
 
   y += 4;
 
-  // -------------------------------------------------------------
-  // 3. INCIDENT MODUS OPERANDI & NARRATIVE STATEMENT
+  // --------------------------------------------  // 3. INCIDENT MODUS OPERANDI & NARRATIVE STATEMENT
   // -------------------------------------------------------------
   drawSectionHeader('2. Incident Modus Operandi & Narrative Statement', 'Verified Narrative');
 
   ensureSpace(18);
-  const narrativeText = sanitizeText(incident.whatHappenedSummary || 'Incident submitted through the Nivaran structured evidence intake workflow.');
+  const narrativeText = sanitizeText(incident.whatHappenedSummary || 'Incident submitted through the Nirnay structured evidence intake workflow.');
   const narrativeLines = doc.splitTextToSize(narrativeText, contentWidth - 6);
 
   // Background Box for Narrative
@@ -414,7 +413,7 @@ export function generateCasePdf(incident: IncidentCase) {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(6.8);
       doc.setTextColor(100, 116, 139);
-      const matchNote = s.matchingReportsCount && s.matchingReportsCount > 0 ? `Matched in ${s.matchingReportsCount} Nivaran Reports` : 'Direct Evidence';
+      const matchNote = s.matchingReportsCount && s.matchingReportsCount > 0 ? `Matched in ${s.matchingReportsCount} Nirnay Reports` : 'Direct Evidence';
       doc.text(matchNote, pageWidth - margin - 3, y + 4.2, { align: 'right' });
 
       y += 7.5;
@@ -549,7 +548,7 @@ export function generateCasePdf(incident: IncidentCase) {
       doc.rect(margin, y, contentWidth, 6, 'F');
       doc.setDrawColor(226, 232, 240);
       doc.setLineWidth(0.2);
-      doc.rect(margin, y, contentWidth, 6, 'S');
+      doc.rect(margin, y, contentWidth, 6.5, 'S');
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(7);
@@ -594,14 +593,14 @@ export function generateCasePdf(incident: IncidentCase) {
 
   // Save PDF
   const cleanCaseId = sanitizeText(incident.caseId).replace(/[^a-zA-Z0-9_-]/g, '_');
-  doc.save(`NIVARAN_Case_Dossier_${cleanCaseId}.pdf`);
+  doc.save(`NIRNAY_Case_Dossier_${cleanCaseId}.pdf`);
 }
 
 export function exportCaseJson(incident: IncidentCase) {
   const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(incident, null, 2));
   const downloadAnchor = document.createElement('a');
   downloadAnchor.setAttribute('href', dataStr);
-  downloadAnchor.setAttribute('download', `NIVARAN_Case_${incident.caseId}.json`);
+  downloadAnchor.setAttribute('download', `NIRNAY_Case_${incident.caseId}.json`);
   document.body.appendChild(downloadAnchor);
   downloadAnchor.click();
   downloadAnchor.remove();
