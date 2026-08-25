@@ -34,7 +34,7 @@ import {
   Zap
 } from 'lucide-react';
 import { useIncident } from '../../context/IncidentContext';
-import { ExternalAuthority, ExternalReference, ExternalStatus } from '../../types';
+import { ExternalAuthority, ExternalReference, ExternalStatus, TimelineSourceLabel } from '../../types';
 import { RiskBadge, StatusProgressBadge, UrgencyBadge } from '../common/Badge';
 import { SensitiveDataMask } from '../common/SensitiveDataMask';
 import { exportCaseJson, generateCasePdf } from '../../services/pdfGenerator';
@@ -51,13 +51,15 @@ export const CaseDetailsView: React.FC = () => {
     removeExternalReference,
     addCaseResponse,
     resolveEvidenceConflict,
-    updateCaseNotes
+    updateCaseNotes,
+    deleteCase
   } = useIncident();
 
   // Modals state
   const [addRefModalOpen, setAddRefModalOpen] = useState(false);
   const [addResponseModalOpen, setAddResponseModalOpen] = useState(false);
   const [bankLetterModalOpen, setBankLetterModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // New Reference Form State
@@ -65,7 +67,7 @@ export const CaseDetailsView: React.FC = () => {
   const [refAuthorityName, setRefAuthorityName] = useState('HDFC Bank Dispute Desk');
   const [refNumber, setRefNumber] = useState('');
   const [refStatus, setRefStatus] = useState<ExternalStatus>('submitted');
-  const [refStatusDisplay, setRefStatusDisplay] = useState('Submitted & Awaiting Response');
+  const [refStatusDisplay, setRefStatusDisplay] = useState('Submitted');
   const [refNotes, setRefNotes] = useState('');
 
   // New Response Form State
@@ -109,14 +111,14 @@ export const CaseDetailsView: React.FC = () => {
     e.preventDefault();
     if (!rawResponseText.trim()) return;
 
-    const parsed = interpretAuthorityResponse(rawResponseText, undefined, responseAuthorityHint);
+    const parsed = interpretAuthorityResponse(rawResponseText, undefined, responseAuthorityHint, activeCase);
     addCaseResponse(activeCase.caseId, parsed);
     setRawResponseText('');
     setAddResponseModalOpen(false);
   };
 
   const handleConflictResolved = (conflictId: string) => {
-    resolveEvidenceConflict(activeCase.caseId, conflictId, conflictResolutionNote || 'Verified against official bank statement.');
+    resolveEvidenceConflict(activeCase.caseId, conflictId, conflictResolutionNote || 'Verified against official bank debit record.');
     setResolvingConflictId(null);
     setConflictResolutionNote('');
   };
@@ -172,7 +174,7 @@ Date: ${new Date().toLocaleDateString('en-IN')}
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => generateCasePdf(activeCase)}
-            className="px-4 py-2 rounded-lg bg-brand-primary hover:bg-brand-hover text-white font-semibold text-xs transition-colors shadow-subtle flex items-center gap-1.5"
+            className="px-4 py-2 rounded-lg bg-brand-primary hover:bg-brand-hover text-white font-bold text-xs transition-colors shadow-subtle flex items-center gap-1.5"
           >
             <FileDown size={14} />
             <span>Download Case Summary PDF</span>
@@ -193,25 +195,34 @@ Date: ${new Date().toLocaleDateString('en-IN')}
             <FileText size={13} />
             <span>Bank Dispute Notice</span>
           </button>
+
+          <button
+            onClick={() => setDeleteModalOpen(true)}
+            className="px-3 py-2 rounded-lg bg-surface hover:bg-brand-red-soft text-text-muted hover:text-brand-red border border-surface-border font-semibold text-xs transition-colors flex items-center gap-1.5"
+            title="Delete this case"
+          >
+            <Trash2 size={13} />
+            <span className="hidden sm:inline">Delete Case</span>
+          </button>
         </div>
       </div>
 
-      {/* 1. CASE HEADER & DISTINCT WORKFLOW VS EXTERNAL STATUS */}
+      {/* 1. CENTRAL CASE HEADER */}
       <div className="p-6 rounded-card-lg bg-surface border border-surface-border shadow-card space-y-5">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-xs font-mono font-bold text-brand-primary uppercase">
               <Shield size={14} />
-              <span>NIVARAN CASE INTELLIGENCE DOSSIER</span>
+              <span>NIVARAN FRAUD CASE RECORD</span>
               <span>&bull;</span>
               <span className="text-text-muted">Registered {new Date(activeCase.createdAt).toLocaleDateString('en-IN')}</span>
             </div>
 
             <h1 className="text-3xl font-display font-extrabold text-text-primary tracking-tight">
-              CASE {activeCase.caseId}
+              {activeCase.caseId}
             </h1>
             <div className="text-sm font-semibold text-text-secondary">
-              {activeCase.analysis.likelyType}
+              {activeCase.category === 'upi_fraud' ? 'UPI / Social Engineering (Utility Impersonation)' : activeCase.analysis.likelyType}
             </div>
           </div>
 
@@ -226,109 +237,71 @@ Date: ${new Date().toLocaleDateString('en-IN')}
           </div>
         </div>
 
-        {/* Realism Separation: NIVARAN WORKFLOW vs EXTERNAL STATUS */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-surface-border/60 text-xs">
-          
-          {/* Box 1: NIVARAN Workflow */}
-          <div className="p-4 rounded-lg bg-brand-soft/40 border border-brand-primary/25 space-y-2">
-            <div className="flex items-center justify-between font-mono font-bold text-brand-primary uppercase text-[11px]">
-              <span>NIVARAN CASE WORKFLOW</span>
-              <span className="text-brand-green">IN PROGRESS</span>
+        {/* Reconciled Parameters Summary */}
+        {primaryTx && (
+          <div className="p-4 rounded-lg bg-surface-subtle border border-surface-border font-mono text-xs grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <span className="text-text-muted text-[11px] block">Debiting Bank:</span>
+              <span className="font-bold text-text-primary">{primaryTx.senderBank}</span>
             </div>
-            <div className="space-y-1 font-mono text-[11px] text-text-primary">
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 size={13} className="text-brand-green" />
-                <span>Incident statement structured</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 size={13} className="text-brand-green" />
-                <span>Digital evidence artifacts indexed ({activeCase.evidence.length} items)</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 size={13} className="text-brand-green" />
-                <span>Case summary package generated</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 size={13} className="text-brand-green" />
-                <span>{activeCase.externalReferences.length} External reference(s) tracked</span>
-              </div>
+            <div>
+              <span className="text-text-muted text-[11px] block">12-Digit UTR:</span>
+              <span className="font-bold text-text-primary">{primaryTx.utrNumber}</span>
+              <span className="text-[10px] text-brand-green font-semibold ml-1">✓ Verified</span>
+            </div>
+            <div>
+              <span className="text-text-muted text-[11px] block">Beneficiary UPI ID:</span>
+              <SensitiveDataMask value={primaryTx.recipientUpiOrAcc} type="upi" />
             </div>
           </div>
-
-          {/* Box 2: Real External Status */}
-          <div className="p-4 rounded-lg bg-surface-subtle border border-surface-border space-y-2">
-            <div className="flex items-center justify-between font-mono font-bold text-text-primary uppercase text-[11px]">
-              <span>EXTERNAL COMPLAINT STATUS</span>
-              <span className="text-text-muted text-[10px]">Source-Attributed</span>
-            </div>
-
-            {activeCase.externalReferences.length === 0 ? (
-              <p className="text-[11px] text-text-muted font-sans">
-                No external reference numbers added yet. Add your bank ticket ID or 1930 acknowledgement below.
-              </p>
-            ) : (
-              <div className="space-y-1.5 font-mono text-[11px]">
-                {activeCase.externalReferences.map((ref) => (
-                  <div key={ref.id} className="flex items-center justify-between">
-                    <span className="text-text-secondary">{ref.authorityName}:</span>
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-text-primary">{ref.referenceNumber}</span>
-                      <span className="text-[10px] text-text-muted">({ref.statusDisplay} &bull; {ref.source})</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-        </div>
+        )}
       </div>
 
-      {/* 2. PRIORITIZED SINGLE NEXT ACTION ("What do I need to do now?") */}
-      <div className="p-5 rounded-card-lg bg-brand-red-soft border border-brand-red/35 shadow-subtle space-y-3">
+      {/* 2. THE NEXT ACTION ENGINE (Specification #13) */}
+      <div className="p-5 rounded-card-lg bg-brand-soft border border-brand-primary/30 shadow-subtle space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-mono font-bold text-brand-red uppercase tracking-wide flex items-center gap-1.5">
-            <ShieldAlert size={15} />
-            WHAT DO I NEED TO DO NOW? &bull; PRIORITIZED NEXT ACTION
+          <span className="text-xs font-mono font-bold text-brand-primary uppercase tracking-wide flex items-center gap-1.5">
+            <AlertCircle size={15} />
+            NEXT ACTION
           </span>
           <UrgencyBadge urgency={activeCase.nextAction.urgency} />
         </div>
 
         <div className="space-y-1">
-          <h3 className="text-base font-bold text-text-primary">
+          <h3 className="text-base font-bold text-text-primary font-sans">
             {activeCase.nextAction.title}
           </h3>
           <p className="text-xs text-text-secondary leading-relaxed font-sans">
-            {activeCase.nextAction.why}
+            <strong>Why it matters:</strong> {activeCase.nextAction.why}
           </p>
         </div>
 
         <div className="pt-2 flex flex-wrap items-center gap-3">
           <button
-            onClick={() => setBankLetterModalOpen(true)}
-            className="px-4 py-2 rounded-lg bg-brand-red text-white text-xs font-bold hover:bg-red-700 transition-colors shadow-subtle flex items-center gap-1.5"
+            onClick={() => setAddResponseModalOpen(true)}
+            className="px-4 py-2 rounded-lg bg-brand-primary text-white text-xs font-bold hover:bg-brand-hover transition-colors shadow-subtle flex items-center gap-1.5"
           >
-            <FileText size={14} />
-            <span>{activeCase.nextAction.actionLabel}</span>
+            <Zap size={14} />
+            <span>Upload / Add Bank Response</span>
           </button>
 
           <button
-            onClick={() => setAddRefModalOpen(true)}
+            onClick={() => setBankLetterModalOpen(true)}
             className="px-4 py-2 rounded-lg bg-surface text-text-primary border border-surface-border text-xs font-semibold hover:bg-surface-elevated transition-colors flex items-center gap-1.5"
           >
-            <Plus size={14} className="text-brand-primary" />
-            <span>Add Bank / NCRP Reference Number</span>
+            <FileText size={14} className="text-brand-primary" />
+            <span>Generate Escalation Notice</span>
           </button>
         </div>
       </div>
 
-      {/* 3. CASE READINESS ENGINE (e.g. 7 / 9 items available) */}
+      {/* 3. CASE READINESS (Specification #9) */}
       <div className="p-6 rounded-card-lg bg-surface border border-surface-border shadow-subtle space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-surface-border/60 pb-3">
           <div className="space-y-0.5">
             <div className="flex items-center gap-2 text-xs font-mono font-bold text-text-primary uppercase">
               <FileCheck size={15} className="text-brand-primary" />
-              <span>CASE READINESS SCORE</span>
+              <span>NIVARAN CASE READINESS</span>
             </div>
             <p className="text-xs text-text-muted font-sans">
               {caseReadiness.statusMessage}
@@ -340,7 +313,7 @@ Date: ${new Date().toLocaleDateString('en-IN')}
               <span className="text-base font-bold text-brand-primary">
                 {caseReadiness.availableCount} / {caseReadiness.totalCount}
               </span>
-              <span className="text-xs text-text-muted ml-1">items available</span>
+              <span className="text-xs text-text-muted ml-1">items ready</span>
             </div>
             <div className="w-24 bg-surface-subtle h-2.5 rounded-full overflow-hidden border border-surface-border">
               <div
@@ -351,7 +324,7 @@ Date: ${new Date().toLocaleDateString('en-IN')}
           </div>
         </div>
 
-        {/* Interactive Readiness Items Grid */}
+        {/* Readiness Checklist Grid with [ Add ] triggers */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
           {caseReadiness.items.map((item) => (
             <div
@@ -384,9 +357,9 @@ Date: ${new Date().toLocaleDateString('en-IN')}
                     if (item.actionTab === 'references') setAddRefModalOpen(true);
                     else if (item.actionTab === 'evidence') setActiveTab('intake');
                   }}
-                  className="px-2 py-1 rounded bg-surface hover:bg-surface-elevated text-brand-primary border border-surface-border font-mono text-[10px] font-bold shrink-0"
+                  className="px-2.5 py-1 rounded bg-surface hover:bg-surface-elevated text-brand-primary border border-surface-border font-mono text-[10px] font-bold shrink-0 shadow-subtle"
                 >
-                  + Add
+                  [ Add ]
                 </button>
               )}
             </div>
@@ -394,19 +367,24 @@ Date: ${new Date().toLocaleDateString('en-IN')}
         </div>
       </div>
 
-      {/* 4. EVIDENCE CONSISTENCY & CONFLICT RESOLUTION */}
+      {/* 4. EVIDENCE RECONCILIATION (Specification #7) */}
       <div className="p-6 rounded-card-lg bg-surface border border-surface-border shadow-subtle space-y-4">
         <div className="flex items-center justify-between border-b border-surface-border/60 pb-3">
-          <div className="flex items-center gap-2 text-xs font-mono font-bold text-text-primary uppercase">
-            <Layers size={15} className="text-brand-primary" />
-            <span>Evidence Consistency & Cross-Verification</span>
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2 text-xs font-mono font-bold text-text-primary uppercase">
+              <Layers size={15} className="text-brand-primary" />
+              <span>Evidence Reconciliation &amp; Cross-Comparison</span>
+            </div>
+            <p className="text-xs text-text-muted font-sans">
+              Compares parameters across payment screenshots, bank SMS alerts, and official statements.
+            </p>
           </div>
-          <span className={`text-[11px] font-mono font-semibold px-2 py-0.5 rounded border ${
+          <span className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded border ${
             consistencyResult.hasConflicts
               ? 'bg-brand-amber-soft text-brand-amber border-brand-amber/30'
               : 'bg-brand-green-soft text-brand-green border-brand-green/20'
           }`}>
-            {consistencyResult.hasConflicts ? 'CONFLICT DETECTED' : 'CONSISTENCY VERIFIED ✓'}
+            {consistencyResult.hasConflicts ? '⚠ CONFLICT DETECTED' : '✓ ALL AMOUNTS & UTRs MATCH'}
           </span>
         </div>
 
@@ -423,7 +401,7 @@ Date: ${new Date().toLocaleDateString('en-IN')}
               </span>
               <button
                 onClick={() => setResolvingConflictId(conf.id)}
-                className="px-2.5 py-1 rounded bg-surface text-text-primary border border-surface-border text-[11px] font-bold hover:bg-surface-elevated"
+                className="px-2.5 py-1 rounded bg-surface text-text-primary border border-surface-border text-[11px] font-bold hover:bg-surface-elevated shadow-subtle"
               >
                 Resolve Conflict
               </button>
@@ -441,7 +419,7 @@ Date: ${new Date().toLocaleDateString('en-IN')}
             </div>
 
             <p className="text-[11px] text-text-secondary font-sans leading-relaxed">
-              {conf.suggestedAction}
+              &ldquo;Your evidence contains different transaction amounts. Review this before using the information in another complaint.&rdquo;
             </p>
           </div>
         ))}
@@ -454,7 +432,7 @@ Date: ${new Date().toLocaleDateString('en-IN')}
               <div key={i} className="p-3 rounded-lg bg-surface-subtle border border-surface-border space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-text-primary">{m.field}</span>
-                  <span className="text-brand-green font-bold text-[10px]">MATCH ✓</span>
+                  <span className="text-brand-green font-bold text-[10px]">✓ MATCHES</span>
                 </div>
                 <div className="text-brand-primary font-bold text-xs">{m.value}</div>
                 <div className="text-[10px] text-text-muted font-sans">{m.description}</div>
@@ -464,61 +442,182 @@ Date: ${new Date().toLocaleDateString('en-IN')}
         </div>
       </div>
 
-      {/* 5. NIVARAN FRAUD NETWORK & CONNECTED CAMPAIGN MATCH */}
-      {activeCase.connectedCampaign && (
-        <div className="p-6 rounded-card-lg bg-surface border border-brand-primary/30 shadow-subtle space-y-3 animate-in fade-in">
-          <div className="flex items-center justify-between border-b border-surface-border/60 pb-3">
-            <div className="flex items-center gap-2 text-xs font-mono font-bold text-brand-primary uppercase">
-              <Zap size={15} />
-              <span>NIVARAN FRAUD NETWORK &bull; CONNECTED CAMPAIGN DETECTED</span>
+      {/* 5. RESPONSE INTERPRETER & COMPARISON (Specification #14 & #15) */}
+      <div className="p-6 rounded-card-lg bg-surface border border-surface-border shadow-subtle space-y-5">
+        <div className="flex items-center justify-between border-b border-surface-border/60 pb-3">
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2 text-xs font-mono font-bold text-text-primary uppercase">
+              <Scale size={15} className="text-brand-primary" />
+              <span>Response Interpreter &amp; Comparison</span>
             </div>
-            <span className="text-[11px] font-mono font-bold text-brand-primary bg-brand-soft px-2 py-0.5 rounded border border-brand-primary/20">
-              {activeCase.connectedCampaign.totalReportsCount} MATCHING REPORTS
-            </span>
-          </div>
-
-          <div>
-            <h3 className="text-base font-bold text-text-primary">
-              {activeCase.connectedCampaign.title}
-            </h3>
-            <p className="text-xs text-text-muted font-mono mt-0.5">
-              Estimated network reported loss: <strong className="text-brand-red">₹{(activeCase.connectedCampaign.totalLossEstimate / 100000).toFixed(2)} Lakh</strong> across {activeCase.connectedCampaign.totalReportsCount} citizen reports.
+            <p className="text-xs text-text-muted font-sans">
+              Interprets incoming bank emails, rejection letters, and NCRP police communications without legal jargon.
             </p>
           </div>
 
-          <div className="space-y-1.5 text-xs pt-1">
-            <div className="text-text-muted font-mono text-[11px]">Common Campaign Indicators:</div>
-            <div className="flex flex-wrap gap-1.5 font-mono text-[11px]">
-              {activeCase.connectedCampaign.commonIndicators.map((ind, idx) => (
-                <span key={idx} className="px-2.5 py-1 rounded bg-surface-subtle border border-surface-border text-text-primary">
-                  {ind}
-                </span>
-              ))}
-            </div>
-          </div>
+          <button
+            onClick={() => setAddResponseModalOpen(true)}
+            className="px-3.5 py-1.5 rounded-lg bg-brand-soft hover:bg-brand-primary hover:text-white text-brand-primary border border-brand-primary/30 font-bold text-xs transition-all flex items-center gap-1.5"
+          >
+            <Plus size={13} />
+            <span>Add a Response</span>
+          </button>
+        </div>
 
-          <div className="pt-2 text-[11px] text-text-muted font-sans border-t border-surface-border/50">
-            * {activeCase.connectedCampaign.confidenceNotice}
+        {/* Existing Responses List */}
+        {activeCase.responses.length === 0 ? (
+          <div className="p-5 text-center text-xs text-text-muted bg-surface-subtle rounded-lg border border-surface-border">
+            No external responses uploaded yet. Click &ldquo;Add a Response&rdquo; to paste bank rejection or acknowledgement emails.
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {activeCase.responses.map((resp) => (
+              <div key={resp.id} className="p-5 rounded-lg bg-surface-subtle border border-surface-border space-y-4 text-xs">
+                
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-surface-border pb-2.5">
+                  <div>
+                    <span className="font-mono text-[10px] font-bold text-text-muted uppercase block">BANK / AUTHORITY RESPONSE</span>
+                    <span className="font-bold text-text-primary text-sm font-sans">{resp.responder}</span>
+                  </div>
+                  <div className="flex items-center gap-2 font-mono text-[11px]">
+                    {resp.referenceNumber && <span className="text-brand-primary font-bold">Ref: {resp.referenceNumber}</span>}
+                    <span className="text-text-muted">{resp.date}</span>
+                  </div>
+                </div>
+
+                {/* Decision & Reason */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono">
+                  <div className="p-2.5 rounded bg-surface border border-surface-border">
+                    <span className="text-[10px] text-text-muted uppercase block font-semibold">Decision:</span>
+                    <span className="font-bold text-text-primary">{resp.decision}</span>
+                  </div>
+                  <div className="p-2.5 rounded bg-surface border border-surface-border">
+                    <span className="text-[10px] text-text-muted uppercase block font-semibold">Reason Stated:</span>
+                    <span className="text-text-secondary">{resp.reason}</span>
+                  </div>
+                </div>
+
+                {/* Structured Breakdown: WHAT THEY SAID, WHAT THIS RELATES TO, WHAT CASE CONTAINS, NEXT STEP */}
+                <div className="space-y-3 font-sans">
+                  
+                  {/* 1. WHAT THEY SAID */}
+                  <div className="p-3 rounded-lg bg-surface border border-surface-border space-y-1">
+                    <div className="text-[11px] font-mono font-bold text-brand-primary uppercase">
+                      WHAT THEY SAID
+                    </div>
+                    <p className="text-xs text-text-primary leading-relaxed">
+                      &ldquo;{resp.whatTheySaid}&rdquo;
+                    </p>
+                  </div>
+
+                  {/* 2. WHAT THIS RELATES TO */}
+                  <div className="p-3 rounded-lg bg-surface border border-surface-border space-y-1">
+                    <div className="text-[11px] font-mono font-bold text-brand-primary uppercase">
+                      WHAT THIS RELATES TO
+                    </div>
+                    <div className="font-mono text-[11px] text-text-secondary space-y-0.5">
+                      <div>Transaction: <strong className="text-text-primary">₹{resp.whatThisRelatesTo?.transactionAmount?.toLocaleString('en-IN') || '18,500'}</strong></div>
+                      <div>UTR: <strong className="text-text-primary">{resp.whatThisRelatesTo?.utrNumber || '423719820491'}</strong></div>
+                    </div>
+                  </div>
+
+                  {/* 3. WHAT YOUR CASE ALREADY CONTAINS */}
+                  <div className="p-3 rounded-lg bg-surface border border-surface-border space-y-1.5">
+                    <div className="text-[11px] font-mono font-bold text-brand-primary uppercase">
+                      WHAT YOUR CASE ALREADY CONTAINS
+                    </div>
+                    <div className="space-y-1 font-mono text-[11px] text-text-primary">
+                      {resp.whatCaseContains?.map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-1.5">
+                          <CheckCircle2 size={13} className="text-brand-green shrink-0" />
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 4. NEXT STEP */}
+                  <div className="p-3.5 rounded-lg bg-brand-soft border border-brand-primary/25 space-y-1">
+                    <div className="text-[11px] font-mono font-bold text-brand-primary uppercase">
+                      RECOMMENDED NEXT STEP
+                    </div>
+                    <p className="text-xs text-text-primary leading-relaxed">
+                      {resp.potentialNextAction}
+                    </p>
+                  </div>
+
+                  {/* 5. RESPONSE COMPARISON */}
+                  {resp.comparison && (
+                    <div className="p-3 rounded-lg bg-surface border border-surface-border flex items-center justify-between text-xs font-mono">
+                      <span className="text-text-muted">Case Consistency:</span>
+                      <span className="font-bold text-brand-green">{resp.comparison.summary}</span>
+                    </div>
+                  )}
+
+                </div>
+
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Generic Escalation Ladder */}
+        <div className="space-y-3 pt-2">
+          <div className="text-[11px] font-mono text-text-muted uppercase">Statutory Escalation Ladder (Bank Dispute &rarr; Ombudsman):</div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs font-mono">
+            {activeCase.escalationLadder?.map((stage) => (
+              <div
+                key={stage.stageNumber}
+                className={`p-3.5 rounded-lg border space-y-2 flex flex-col justify-between ${
+                  stage.status === 'completed'
+                    ? 'bg-surface-elevated border-brand-green/30'
+                    : stage.status === 'eligible_next'
+                    ? 'bg-brand-soft border-brand-primary ring-1 ring-brand-primary/20'
+                    : 'bg-surface-subtle/50 border-surface-border opacity-60'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between text-[10px] text-text-muted font-bold">
+                    <span>STAGE {stage.stageNumber}</span>
+                    {stage.status === 'completed' ? (
+                      <span className="text-brand-green">COMPLETED ✓</span>
+                    ) : stage.status === 'eligible_next' ? (
+                      <span className="text-brand-primary font-bold">ELIGIBLE NOW</span>
+                    ) : (
+                      <span>PENDING</span>
+                    )}
+                  </div>
+
+                  <h4 className="font-bold text-text-primary mt-1 font-sans text-xs">{stage.title}</h4>
+                  <p className="text-[11px] text-text-muted font-sans mt-1 leading-tight">{stage.description}</p>
+                </div>
+
+                <div className="pt-2 border-t border-surface-border/50 text-[10px] text-text-muted">
+                  <span>Prerequisite: {stage.eligibilityCheck}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-      )}
+      </div>
 
-      {/* 6. EXTERNAL CASE REFERENCES LEDGER */}
+      {/* 6. OFFICIAL / EXTERNAL REFERENCES MANAGER (Specification #10 & #11) */}
       <div className="p-6 rounded-card-lg bg-surface border border-surface-border shadow-subtle space-y-4">
         <div className="flex items-center justify-between border-b border-surface-border/60 pb-3">
           <div className="space-y-0.5">
             <div className="flex items-center gap-2 text-xs font-mono font-bold text-text-primary uppercase">
               <Building2 size={15} className="text-brand-primary" />
-              <span>External Complaint Reference Numbers</span>
+              <span>Official &amp; External References ({activeCase.externalReferences.length})</span>
             </div>
             <p className="text-xs text-text-muted font-sans">
-              Consolidated official tracking references across banks, 1930, and cybercrime portals.
+              Unified tracking record for Bank, 1930, NCRP, and Payment App complaints with verified source tagging.
             </p>
           </div>
 
           <button
             onClick={() => setAddRefModalOpen(true)}
-            className="px-3.5 py-1.5 rounded-lg bg-brand-primary hover:bg-brand-hover text-white font-semibold text-xs transition-colors shadow-subtle flex items-center gap-1.5"
+            className="px-3.5 py-1.5 rounded-lg bg-brand-primary hover:bg-brand-hover text-white font-bold text-xs transition-colors shadow-subtle flex items-center gap-1.5"
           >
             <Plus size={13} />
             <span>Add Reference</span>
@@ -527,7 +626,7 @@ Date: ${new Date().toLocaleDateString('en-IN')}
 
         {activeCase.externalReferences.length === 0 ? (
           <div className="p-6 text-center text-xs text-text-muted bg-surface-subtle rounded-lg border border-surface-border">
-            No external references recorded yet. Click &ldquo;Add Reference&rdquo; to track your bank ticket ID or 1930 reference.
+            No external references linked yet.
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs font-mono">
@@ -550,7 +649,7 @@ Date: ${new Date().toLocaleDateString('en-IN')}
 
                   <div className="flex items-center justify-between">
                     <span className="text-base font-bold text-text-primary font-mono">{ref.referenceNumber}</span>
-                    <span className="px-2 py-0.5 rounded bg-brand-blue-soft text-brand-blue border border-brand-blue/20 text-[10px] font-bold">
+                    <span className="px-2 py-0.5 rounded bg-brand-soft text-brand-primary border border-brand-primary/20 text-[10px] font-bold">
                       {ref.statusDisplay}
                     </span>
                   </div>
@@ -563,7 +662,7 @@ Date: ${new Date().toLocaleDateString('en-IN')}
                 </div>
 
                 <div className="pt-2 border-t border-surface-border/60 flex items-center justify-between text-[10px] text-text-muted">
-                  <span>Source: {ref.source}</span>
+                  <span>Source: <strong>{ref.source}</strong></span>
                   <span>Updated: {ref.lastUpdated}</span>
                 </div>
               </div>
@@ -572,124 +671,80 @@ Date: ${new Date().toLocaleDateString('en-IN')}
         )}
       </div>
 
-      {/* 7. RESPONSE INTERPRETER & ESCALATION TRACKER */}
-      <div className="p-6 rounded-card-lg bg-surface border border-surface-border shadow-subtle space-y-5">
-        <div className="flex items-center justify-between border-b border-surface-border/60 pb-3">
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-2 text-xs font-mono font-bold text-text-primary uppercase">
-              <Scale size={15} className="text-brand-primary" />
-              <span>Response Interpreter & Escalation Ladder</span>
+      {/* 7. NIVARAN FRAUD NETWORK / COLLECTIVE INTELLIGENCE (Specification #22 & #23) */}
+      {activeCase.connectedCampaign && (
+        <div className="p-6 rounded-card-lg bg-surface border border-brand-primary/30 shadow-subtle space-y-3 animate-in fade-in">
+          <div className="flex items-center justify-between border-b border-surface-border/60 pb-3">
+            <div className="flex items-center gap-2 text-xs font-mono font-bold text-brand-primary uppercase">
+              <Zap size={15} />
+              <span>POSSIBLE CONNECTED CAMPAIGN &bull; COLLECTIVE INTELLIGENCE</span>
             </div>
-            <p className="text-xs text-text-muted font-sans">
-              Translate bank dispute responses into plain English and follow the generic RBI escalation framework.
+            <span className="text-[11px] font-mono font-bold text-brand-primary bg-brand-soft px-2 py-0.5 rounded border border-brand-primary/20">
+              {activeCase.connectedCampaign.totalReportsCount} POTENTIALLY CONNECTED REPORTS
+            </span>
+          </div>
+
+          <div>
+            <h3 className="text-base font-bold text-text-primary">
+              {activeCase.connectedCampaign.title}
+            </h3>
+            <p className="text-xs text-text-muted font-mono mt-0.5">
+              ₹{(activeCase.connectedCampaign.totalLossEstimate / 100000).toFixed(2)} lakh reported across {activeCase.connectedCampaign.totalReportsCount} related cases.
             </p>
           </div>
 
-          <button
-            onClick={() => setAddResponseModalOpen(true)}
-            className="px-3.5 py-1.5 rounded-lg bg-surface hover:bg-surface-elevated text-brand-primary border border-brand-primary/30 font-semibold text-xs transition-colors flex items-center gap-1.5"
-          >
-            <Plus size={13} />
-            <span>Add Authority Response</span>
-          </button>
-        </div>
-
-        {/* Existing Responses */}
-        {activeCase.responses.length > 0 && (
-          <div className="space-y-3">
-            <div className="text-[11px] font-mono text-text-muted uppercase">Interpreted Responses ({activeCase.responses.length}):</div>
-            {activeCase.responses.map((resp) => (
-              <div key={resp.id} className="p-4 rounded-lg bg-brand-soft/40 border border-brand-primary/25 space-y-2 text-xs">
-                <div className="flex items-center justify-between text-brand-primary font-mono font-bold">
-                  <span>{resp.responder}</span>
-                  <span className="text-[11px] text-text-muted">{resp.date}</span>
-                </div>
-
-                <div>
-                  <div className="font-bold text-text-primary text-sm">{resp.decision}</div>
-                  <div className="text-text-muted text-[11px] font-mono mt-0.5">Reason: {resp.reason}</div>
-                </div>
-
-                <div className="p-3 rounded bg-surface border border-surface-border leading-relaxed font-sans text-text-primary">
-                  <strong className="text-brand-primary font-mono text-[11px] block mb-0.5">NIVARAN PLAIN-ENGLISH TRANSLATION:</strong>
-                  {resp.plainSummary}
-                </div>
-
-                <div className="p-2.5 rounded bg-brand-blue-soft border border-brand-blue/20 text-brand-blue font-sans text-[11px]">
-                  <strong>Recommended Next Action:</strong> {resp.potentialNextAction}
-                </div>
-              </div>
-            ))}
+          <div className="space-y-1.5 text-xs pt-1">
+            <div className="text-text-muted font-mono text-[11px]">Common Indicators:</div>
+            <div className="flex flex-wrap gap-1.5 font-mono text-[11px]">
+              {activeCase.connectedCampaign.commonIndicators.map((ind, idx) => (
+                <span key={idx} className="px-2.5 py-1 rounded bg-surface-subtle border border-surface-border text-text-primary">
+                  {ind}
+                </span>
+              ))}
+            </div>
           </div>
-        )}
 
-        {/* 4-Stage Generic Escalation Ladder */}
-        <div className="space-y-3 pt-2">
-          <div className="text-[11px] font-mono text-text-muted uppercase">Generic Regulatory Escalation Ladder:</div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs font-mono">
-            {activeCase.escalationLadder?.map((stage) => (
-              <div
-                key={stage.stageNumber}
-                className={`p-3.5 rounded-lg border space-y-2 flex flex-col justify-between ${
-                  stage.status === 'completed'
-                    ? 'bg-surface-elevated border-brand-green/30'
-                    : stage.status === 'eligible_next'
-                    ? 'bg-brand-soft border-brand-primary ring-1 ring-brand-primary/20'
-                    : 'bg-surface-subtle/50 border-surface-border opacity-60'
-                }`}
-              >
-                <div>
-                  <div className="flex items-center justify-between text-[10px] text-text-muted font-bold">
-                    <span>STAGE {stage.stageNumber}</span>
-                    {stage.status === 'completed' ? (
-                      <span className="text-brand-green">COMPLETED ✓</span>
-                    ) : stage.status === 'eligible_next' ? (
-                      <span className="text-brand-primary font-bold">ELIGIBLE NOW</span>
-                    ) : (
-                      <span>LOCKED</span>
-                    )}
-                  </div>
-
-                  <h4 className="font-bold text-text-primary mt-1 font-sans text-xs">{stage.title}</h4>
-                  <p className="text-[11px] text-text-muted font-sans mt-1 leading-tight">{stage.description}</p>
-                </div>
-
-                <div className="pt-2 border-t border-surface-border/50 text-[10px] text-text-muted">
-                  <span>Eligibility: {stage.eligibilityCheck}</span>
-                </div>
-              </div>
-            ))}
+          <div className="pt-2 text-[11px] text-text-muted font-sans border-t border-surface-border/50">
+            * <strong>Privacy Boundary:</strong> {activeCase.connectedCampaign.confidenceNotice} No private citizen identities, bank accounts, or chats are exposed.
           </div>
         </div>
-      </div>
+      )}
 
-      {/* 8. FACTUAL TIMELINE WITH SOURCE ATTRIBUTION */}
+      {/* 8. FACTUAL EVIDENCE TIMELINE (Specification #8) */}
       <div className="p-6 rounded-card-lg bg-surface border border-surface-border shadow-subtle space-y-4">
         <div className="flex items-center justify-between border-b border-surface-border/60 pb-3">
-          <div className="flex items-center gap-2 text-xs font-mono font-bold text-text-primary uppercase">
-            <Clock size={15} className="text-brand-primary" />
-            <span>Factual Evidence Timeline & Trail</span>
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2 text-xs font-mono font-bold text-text-primary uppercase">
+              <Clock size={15} className="text-brand-primary" />
+              <span>Factual Evidence Timeline</span>
+            </div>
+            <p className="text-xs text-text-muted font-sans">
+              Strictly source-attributed event sequence. No fabricated inferred facts.
+            </p>
           </div>
           <span className="text-[11px] font-mono text-text-muted">
-            {activeCase.timeline.length} verified event(s)
+            {activeCase.timeline.length} verified events
           </span>
         </div>
 
         <div className="space-y-3">
-          {activeCase.timeline.map((ev, i) => (
+          {activeCase.timeline.map((ev) => (
             <div key={ev.id} className="flex items-start gap-3 text-xs">
-              <div className="font-mono font-bold text-brand-primary shrink-0 w-16 text-right pt-0.5">
+              <div className="font-mono font-bold text-brand-primary shrink-0 w-20 text-right pt-0.5">
                 {ev.timestamp}
               </div>
 
-              <div className="h-full border-l-2 border-surface-border pl-3 space-y-1 flex-1 pb-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-text-primary">{ev.title}</h4>
-                  <span className="text-[10px] font-mono text-text-muted px-2 py-0.5 rounded bg-surface-subtle border border-surface-border">
-                    {ev.source}
+              <div className="h-full border-l-2 border-surface-border pl-3.5 space-y-1 flex-1 pb-3">
+                <div className="flex flex-wrap items-center justify-between gap-1">
+                  <h4 className="font-bold text-text-primary font-sans">{ev.title}</h4>
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-surface-subtle border border-surface-border text-brand-primary uppercase">
+                    {ev.sourceLabel}
                   </span>
                 </div>
                 <p className="text-text-secondary leading-relaxed font-sans">{ev.description}</p>
+                <div className="text-[10px] font-mono text-text-muted">
+                  Source: {ev.source}
+                </div>
               </div>
             </div>
           ))}
@@ -701,8 +756,8 @@ Date: ${new Date().toLocaleDateString('en-IN')}
         <Modal
           isOpen={addRefModalOpen}
           onClose={() => setAddRefModalOpen(false)}
-          title="Add External Complaint Reference"
-          subtitle="Record official ticket and acknowledgement numbers"
+          title="Add Official / External Reference"
+          subtitle="Record Bank, 1930, or NCRP complaint reference numbers"
           maxWidth="sm"
         >
           <form onSubmit={handleSaveReference} className="space-y-4 text-xs">
@@ -724,13 +779,12 @@ Date: ${new Date().toLocaleDateString('en-IN')}
                 <option value="1930">1930 / I4C National Helpline</option>
                 <option value="ncrp">NCRP (cybercrime.gov.in)</option>
                 <option value="payment_app">Payment App (GPay/PhonePe/Paytm)</option>
-                <option value="merchant">Merchant / Platform Desk</option>
-                <option value="police">Local Police Station FIR / CSR</option>
+                <option value="police">Police Station FIR / CSR</option>
               </select>
             </div>
 
             <div>
-              <label className="block font-bold text-text-primary mb-1">Authority Name Label</label>
+              <label className="block font-bold text-text-primary mb-1">Authority Label</label>
               <input
                 type="text"
                 value={refAuthorityName}
@@ -747,14 +801,14 @@ Date: ${new Date().toLocaleDateString('en-IN')}
                 type="text"
                 value={refNumber}
                 onChange={(e) => setRefNumber(e.target.value)}
-                placeholder="e.g. HDFC-98127 or CF-728191 or 123456789012"
+                placeholder="e.g. HDFC-98127, CF-728191, 123456789012"
                 className="w-full bg-surface-subtle border border-surface-border rounded-lg px-3 py-2 font-mono font-bold text-text-primary outline-none focus:border-brand-primary uppercase"
                 required
               />
             </div>
 
             <div>
-              <label className="block font-bold text-text-primary mb-1">Current Known Status</label>
+              <label className="block font-bold text-text-primary mb-1">Status</label>
               <select
                 value={refStatus}
                 onChange={(e) => {
@@ -768,9 +822,9 @@ Date: ${new Date().toLocaleDateString('en-IN')}
                 className="w-full bg-surface-subtle border border-surface-border rounded-lg px-3 py-2 text-text-primary outline-none focus:border-brand-primary"
               >
                 <option value="submitted">Submitted</option>
-                <option value="acknowledged">Acknowledged / Lien Initiated</option>
-                <option value="awaiting_response">Awaiting Bank / Authority Response</option>
-                <option value="dispute_raised">In-App Dispute Raised</option>
+                <option value="acknowledged">Acknowledged</option>
+                <option value="awaiting_response">Awaiting response</option>
+                <option value="dispute_raised">Dispute raised</option>
               </select>
             </div>
 
@@ -780,7 +834,7 @@ Date: ${new Date().toLocaleDateString('en-IN')}
                 type="text"
                 value={refNotes}
                 onChange={(e) => setRefNotes(e.target.value)}
-                placeholder="e.g. Spoke to nodal desk, requested FIR copy"
+                placeholder="e.g. Logged via fraud hotline"
                 className="w-full bg-surface-subtle border border-surface-border rounded-lg px-3 py-2 text-text-primary outline-none focus:border-brand-primary"
               />
             </div>
@@ -805,13 +859,13 @@ Date: ${new Date().toLocaleDateString('en-IN')}
         </Modal>
       )}
 
-      {/* MODAL 2: Add Authority Response */}
+      {/* MODAL 2: Add Authority Response (Specification #14) */}
       {addResponseModalOpen && (
         <Modal
           isOpen={addResponseModalOpen}
           onClose={() => setAddResponseModalOpen(false)}
-          title="Interpret Bank or Authority Response"
-          subtitle="Paste bank emails, rejection letters, or NCRP updates"
+          title="Add / Interpret Authority Response"
+          subtitle="Paste bank emails, letters, or NCRP communications"
           maxWidth="md"
         >
           <form onSubmit={handleSaveResponse} className="space-y-4 text-xs">
@@ -822,20 +876,20 @@ Date: ${new Date().toLocaleDateString('en-IN')}
                 onChange={(e) => setResponseAuthorityHint(e.target.value as ExternalAuthority)}
                 className="w-full bg-surface-subtle border border-surface-border rounded-lg px-3 py-2 text-text-primary outline-none focus:border-brand-primary"
               >
-                <option value="bank">Bank Fraud Desk / Branch</option>
-                <option value="ncrp">cybercrime.gov.in (NCRP)</option>
-                <option value="1930">1930 / I4C Cyber Helpline</option>
-                <option value="payment_app">Payment App (GPay/PhonePe)</option>
+                <option value="bank">Bank Fraud Dispute Desk</option>
+                <option value="ncrp">NCRP (cybercrime.gov.in)</option>
+                <option value="1930">1930 / I4C Cyber Crime Cell</option>
+                <option value="payment_app">Payment App Support (GPay/PhonePe)</option>
               </select>
             </div>
 
             <div>
-              <label className="block font-bold text-text-primary mb-1">Paste Response Email / Letter Text *</label>
+              <label className="block font-bold text-text-primary mb-1">Paste Response Text *</label>
               <textarea
                 rows={6}
                 value={rawResponseText}
                 onChange={(e) => setRawResponseText(e.target.value)}
-                placeholder="e.g. 'Dear Customer, with reference to dispute HDFC-98127, we regret to inform you that transaction was authenticated by OTP entered by customer. Hence dispute is rejected...'"
+                placeholder="e.g. 'Dear Customer, regarding claim HDFC-98127 for UPI transfer of INR 18,500.00 (UTR 423719820491), internal logs show transaction was customer-authorised via MPIN. Dispute rejected. To escalate, submit police/NCRP acknowledgement within 7 days.'"
                 className="w-full bg-surface-subtle border border-surface-border rounded-lg p-3 font-mono text-xs text-text-primary outline-none focus:border-brand-primary"
                 required
               />
@@ -851,10 +905,10 @@ Date: ${new Date().toLocaleDateString('en-IN')}
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-lg bg-brand-primary hover:bg-brand-hover text-white font-semibold text-xs shadow-subtle flex items-center gap-1.5"
+                className="px-5 py-2 rounded-lg bg-brand-primary hover:bg-brand-hover text-white font-bold text-xs shadow-subtle flex items-center gap-1.5"
               >
                 <Zap size={14} />
-                <span>Interpret & Attach Response</span>
+                <span>Interpret &amp; Update Case</span>
               </button>
             </div>
           </form>
@@ -867,21 +921,21 @@ Date: ${new Date().toLocaleDateString('en-IN')}
           isOpen={resolvingConflictId !== null}
           onClose={() => setResolvingConflictId(null)}
           title="Resolve Evidence Information Conflict"
-          subtitle="Select confirmed value for official filing"
+          subtitle="Confirm the verified figure for official filing"
           maxWidth="sm"
         >
           <div className="space-y-4 text-xs">
             <p className="text-text-secondary leading-relaxed">
-              Discrepant figures across documents can delay bank chargeback reviews. Confirm the exact value recorded on your official bank debit statement.
+              Confirm the exact value recorded on your official bank debit statement.
             </p>
 
             <div>
-              <label className="block font-bold text-text-primary mb-1">Resolution Note / Confirmed Figure:</label>
+              <label className="block font-bold text-text-primary mb-1">Resolution Note / Confirmed Value:</label>
               <input
                 type="text"
                 value={conflictResolutionNote}
                 onChange={(e) => setConflictResolutionNote(e.target.value)}
-                placeholder="e.g. Verified from Bank Statement: Disputed amount is exactly ₹18,500"
+                placeholder="e.g. Confirmed from Bank Statement: Disputed amount is exactly ₹18,500"
                 className="w-full bg-surface-subtle border border-surface-border rounded-lg px-3 py-2 text-text-primary outline-none focus:border-brand-primary"
               />
             </div>
@@ -911,7 +965,7 @@ Date: ${new Date().toLocaleDateString('en-IN')}
         <Modal
           isOpen={bankLetterModalOpen}
           onClose={() => setBankLetterModalOpen(false)}
-          title="Formal Bank Dispute Letter"
+          title="Formal Bank Dispute Notice"
           subtitle="Formatted per RBI Guidelines on Customer Protection (Zero-Liability Window)"
           maxWidth="xl"
         >
@@ -922,7 +976,7 @@ Date: ${new Date().toLocaleDateString('en-IN')}
 
             <div className="flex justify-between items-center pt-2 border-t border-surface-border">
               <span className="text-xs text-text-muted font-mono">
-                Print or email this directly to your Bank Branch Manager.
+                Submit this notice to your Bank Branch Manager or Nodal Grievance Desk.
               </span>
               <button
                 onClick={() => copyText('bankLetter', bankLetterText)}
@@ -930,6 +984,44 @@ Date: ${new Date().toLocaleDateString('en-IN')}
               >
                 {copiedKey === 'bankLetter' ? <Check size={14} /> : <Copy size={14} />}
                 <span>{copiedKey === 'bankLetter' ? 'Copied to Clipboard' : 'Copy Notice Text'}</span>
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* MODAL 5: Delete Case Modal */}
+      {deleteModalOpen && (
+        <Modal
+          isOpen={deleteModalOpen}
+          onClose={() => setDeleteModalOpen(false)}
+          title="Delete Case File"
+          subtitle={`Case ID: ${activeCase.caseId}`}
+          maxWidth="sm"
+        >
+          <div className="space-y-4 text-xs font-sans">
+            <p className="text-text-secondary leading-relaxed">
+              Are you sure you want to permanently delete this case record? This will remove all associated transaction records, external references, and evidence artifacts.
+            </p>
+
+            <div className="pt-3 border-t border-surface-border flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDeleteModalOpen(false)}
+                className="px-4 py-2 rounded-lg bg-surface hover:bg-surface-subtle text-text-secondary border border-surface-border font-semibold text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  deleteCase(activeCase.caseId);
+                  setDeleteModalOpen(false);
+                }}
+                className="px-4 py-2 rounded-lg bg-brand-red hover:bg-red-700 text-white font-bold text-xs shadow-subtle flex items-center gap-1.5"
+              >
+                <Trash2 size={13} />
+                <span>Permanently Delete</span>
               </button>
             </div>
           </div>

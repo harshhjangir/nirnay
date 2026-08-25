@@ -1,7 +1,7 @@
-import { EvidenceExtractedData, NivaranToolResult, TransactionDetail } from '../types';
+import { EvidenceExtractedData, NivaranToolResult } from '../types';
 
 // -------------------------------------------------------------
-// 1. CHECK A UPI ID
+// 1. CHECK A UPI ID (Specification #17)
 // -------------------------------------------------------------
 export function checkUpiIdTool(rawInput: string): NivaranToolResult {
   const query = rawInput.trim().toLowerCase();
@@ -9,70 +9,84 @@ export function checkUpiIdTool(rawInput: string): NivaranToolResult {
   const isValidFormat = upiRegex.test(query);
 
   const signals: Array<{ type: 'warning' | 'info' | 'critical'; label: string; description: string }> = [];
-  let riskScore = 20;
   let verdict: NivaranToolResult['verdict'] = 'NO_KNOWN_MATCH';
   let matchingReportsCount = 0;
+  const relatedCases: string[] = [];
+
+  if (!query) {
+    return {
+      toolId: 'upi_check',
+      toolName: 'Check a UPI ID',
+      timestamp: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+      query: '',
+      summary: 'Please provide a UPI ID (VPA) to analyze.',
+      verdict: 'INSUFFICIENT_INFORMATION',
+      disclaimer: 'Not finding a report does not establish that an identifier is trustworthy.'
+    };
+  }
 
   if (!isValidFormat) {
     signals.push({
       type: 'warning',
-      label: 'Non-Standard UPI Syntax',
-      description: 'Does not match standard Virtual Payment Address (VPA) username@handle format.'
+      label: 'Non-Standard UPI Format',
+      description: 'Does not conform to standard username@bankhandle syntax (e.g., name@okaxis).'
     });
-    riskScore += 30;
     verdict = 'POTENTIAL_RISK_SIGNALS';
   } else {
     const [username, handle] = query.split('@');
     signals.push({
       type: 'info',
-      label: 'Format Validated',
+      label: 'Format Syntax Validated',
       description: `Recognized UPI handle: @${handle} with username prefix: "${username}".`
     });
 
     // Check for deceptive business keywords in personal handle
-    const deceptiveWords = ['bill', 'update', 'support', 'help', 'customercare', 'refund', 'discom', 'care', 'kyc', 'service', 'dept'];
+    const deceptiveWords = ['bill', 'update', 'support', 'help', 'customercare', 'refund', 'discom', 'care', 'kyc', 'service', 'dept', 'officer'];
     const matchedDeceptive = deceptiveWords.filter(w => username.includes(w));
 
     if (matchedDeceptive.length > 0) {
       signals.push({
         type: 'warning',
-        label: 'Deceptive Organization Keyword in Handle',
-        description: `Identifier username contains institutional keyword(s) [${matchedDeceptive.join(', ')}]. Scammers frequently register private handles mimicking official utility and support desks.`
+        label: 'Institutional Impersonation Keywords in Handle',
+        description: `Username contains keywords [${matchedDeceptive.join(', ')}]. Private accounts frequently mimic official utility or bank support desks.`
       });
-      riskScore += 35;
       verdict = 'POTENTIAL_RISK_SIGNALS';
     }
 
-    // Check against Nivaran internal reports database
+    // Check against Nivaran network collective intelligence
     if (query === 'discom.billupdate.982@okaxis' || query.includes('discom.bill')) {
       matchingReportsCount = 17;
-      riskScore = 90;
+      relatedCases.push('NVR-2026-00124', 'NVR-2026-00089', 'NVR-2026-00062');
       verdict = 'HIGH_RISK_ALERT';
       signals.push({
         type: 'critical',
-        label: 'Multiple Matching Nivaran Reports Found',
-        description: 'This exact VPA appears in 17 distinct financial fraud reports on the Nivaran network within the last 30 days.'
+        label: 'Reported in Nivaran (17 Matching Reports)',
+        description: 'This exact UPI handle matches 17 reports linked to the Electricity DISCOM Impersonation Campaign.'
       });
     } else if (query === 'airhelp.refunds.912@ybl' || query.includes('airhelp.refunds')) {
       matchingReportsCount = 8;
-      riskScore = 85;
+      relatedCases.push('NVR-2026-00041', 'NVR-2026-00033');
       verdict = 'HIGH_RISK_ALERT';
       signals.push({
         type: 'critical',
-        label: 'Search Engine Spoofing Reports',
-        description: 'Associated with fake customer care collect requests on PhonePe / Google Pay.'
+        label: 'Reported in Nivaran (8 Matching Reports)',
+        description: 'Associated with fake customer care collect requests on search engines.'
       });
     } else if (query.includes('vip.merchant') || query.includes('telegram.task')) {
       matchingReportsCount = 29;
-      riskScore = 95;
       verdict = 'HIGH_RISK_ALERT';
       signals.push({
         type: 'critical',
-        label: 'Telegram Task Fraud Multi-Report Signal',
+        label: 'Reported in Nivaran (29 Matching Reports)',
         description: 'Identified as rotating deposit handle in task-based rating scams.'
       });
     }
   }
+
+  const guidance = [
+    'Always verify the recipient beneficiary name displayed inside your UPI app before entering UPI PIN.',
+    'Remember: Entering a UPI PIN is ALWAYS to debit money, never to receive a refund or cashback.'
+  ];
 
   return {
     toolId: 'upi_check',
@@ -80,297 +94,380 @@ export function checkUpiIdTool(rawInput: string): NivaranToolResult {
     timestamp: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
     query,
     summary: verdict === 'HIGH_RISK_ALERT'
-      ? `High-risk indicator: ${matchingReportsCount} prior Nivaran fraud reports match this VPA.`
+      ? `Reported in Nivaran: ${matchingReportsCount} related cases share this identifier.`
       : verdict === 'POTENTIAL_RISK_SIGNALS'
       ? 'Potential warning signals detected: Identifier uses deceptive institutional keywords.'
-      : 'No previous warning signals or fraud reports indexed for this identifier in Nivaran.',
+      : 'No matching reports found in Nivaran database.',
     verdict,
     signals,
+    guidance,
+    disclaimer: 'Important: Not finding a report does not establish that an identifier is trustworthy. Scammers constantly generate new UPI VPAs.',
+    matchingReportsCount: matchingReportsCount > 0 ? matchingReportsCount : undefined,
+    relatedCases: relatedCases.length > 0 ? relatedCases : undefined,
     extractedData: {
       upiId: query
     },
     suggestedAction: verdict === 'HIGH_RISK_ALERT'
-      ? 'Do not transfer money. If already sent, dial 1930 immediately with your 12-digit UTR.'
-      : 'Always verify recipient identity directly through the verified merchant app. Absence of a warning signal does not guarantee authenticity.'
+      ? 'Do not transfer money. If money was transferred, dial 1930 immediately with your 12-digit UTR.'
+      : 'Verify recipient with the official merchant before authorising payment.'
   };
 }
 
 // -------------------------------------------------------------
-// 2. CHECK A PHONE NUMBER
+// 2. CHECK A PHONE NUMBER (Specification #18)
 // -------------------------------------------------------------
 export function checkPhoneNumberTool(rawInput: string): NivaranToolResult {
-  const clean = rawInput.trim().replace(/[\s\-\(\)]/g, '');
-  const isIndianFormat = clean.match(/^(?:\+91|91|0)?[6-9]\d{9}$/);
+  const query = rawInput.trim();
+  const cleanPhone = query.replace(/[\s\-\(\)\+]/g, '');
 
   const signals: Array<{ type: 'warning' | 'info' | 'critical'; label: string; description: string }> = [];
-  let riskScore = 15;
   let verdict: NivaranToolResult['verdict'] = 'NO_KNOWN_MATCH';
   let matchingReportsCount = 0;
+  const relatedCases: string[] = [];
 
-  if (!isIndianFormat) {
+  if (cleanPhone.length < 10) {
+    return {
+      toolId: 'phone_check',
+      toolName: 'Check a Phone Number',
+      timestamp: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+      query,
+      summary: 'Insufficient digits provided. Indian mobile numbers require 10 digits.',
+      verdict: 'INSUFFICIENT_INFORMATION',
+      disclaimer: 'Do not rely solely on caller ID or number absence.'
+    };
+  }
+
+  // Check known Nivaran scam reports
+  if (cleanPhone.includes('7019284920') || cleanPhone.endsWith('7019284920')) {
+    matchingReportsCount = 17;
+    relatedCases.push('NVR-2026-00124', 'NVR-2026-00089');
+    verdict = 'HIGH_RISK_ALERT';
+    signals.push({
+      type: 'critical',
+      label: 'Reported in 17 Nivaran Cases',
+      description: 'Repeatedly reported as caller in State Electricity DISCOM disconnection scam.'
+    });
     signals.push({
       type: 'warning',
-      label: 'Non-Standard Mobile Number Format',
-      description: 'Does not match standard 10-digit Indian telecommunications numbering format.'
+      label: 'VoIP / Temporary SIM Indicator',
+      description: 'Used in outbound automated WhatsApp broadcast campaigns.'
     });
-    riskScore += 25;
-    verdict = 'POTENTIAL_RISK_SIGNALS';
+  } else if (cleanPhone.includes('9120394812')) {
+    matchingReportsCount = 8;
+    verdict = 'HIGH_RISK_ALERT';
+    signals.push({
+      type: 'critical',
+      label: 'Reported in 8 Nivaran Cases',
+      description: 'Reported as fake airline customer care number placed on Google search ads.'
+    });
   } else {
     signals.push({
       type: 'info',
-      label: 'Standard Indian Mobile Format',
-      description: '10-digit GSM/VoLTE cellular subscriber format (+91).'
+      label: 'No Prior Nivaran Record',
+      description: 'This number has not been previously recorded in the Nivaran collective intelligence repository.'
     });
-
-    if (clean.includes('7019284920') || clean.includes('70192 84920')) {
-      matchingReportsCount = 17;
-      riskScore = 92;
-      verdict = 'HIGH_RISK_ALERT';
-      signals.push({
-        type: 'critical',
-        label: 'Reported in Electricity Bill Extortion Campaign',
-        description: 'Number reported as calling victims with 15-minute power disconnection threats and sending phishing links.'
-      });
-    } else if (clean.includes('9120394812') || clean.includes('91203 94812')) {
-      matchingReportsCount = 8;
-      riskScore = 88;
-      verdict = 'HIGH_RISK_ALERT';
-      signals.push({
-        type: 'critical',
-        label: 'Reported Fake Customer Care Number',
-        description: 'Posted on manipulated Google search listings impersonating airline support.'
-      });
-    }
   }
 
   return {
     toolId: 'phone_check',
     toolName: 'Check a Phone Number',
     timestamp: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
-    query: rawInput,
+    query,
     summary: verdict === 'HIGH_RISK_ALERT'
-      ? `High-risk indicator: ${matchingReportsCount} prior reports indexed for this number.`
-      : 'No prior fraud reports indexed in Nivaran database for this mobile number.',
+      ? `Reported in Nivaran: ${matchingReportsCount} reports match this phone number.`
+      : 'No matching reports found in Nivaran.',
     verdict,
     signals,
+    disclaimer: 'Not finding a report does not establish that a phone number is legitimate. Scammers frequently cycle through fresh burner SIMs.',
+    matchingReportsCount: matchingReportsCount > 0 ? matchingReportsCount : undefined,
+    relatedCases: relatedCases.length > 0 ? relatedCases : undefined,
     extractedData: {
-      phoneNumber: rawInput
+      phoneNumber: query
     },
-    suggestedAction: 'Legitimate banks and utility DISCOMs never make threat calls from regular 10-digit private mobile numbers.'
+    suggestedAction: 'Do not share OTPs, download APKs, or open remote access links sent by this caller.'
   };
 }
 
 // -------------------------------------------------------------
-// 3. CHECK A WEBSITE / URL
+// 3. CHECK A URL / LINK (Specification #19)
 // -------------------------------------------------------------
 export function checkWebsiteUrlTool(rawInput: string): NivaranToolResult {
   const query = rawInput.trim();
   const lower = query.toLowerCase();
 
   const signals: Array<{ type: 'warning' | 'info' | 'critical'; label: string; description: string }> = [];
-  let riskScore = 20;
   let verdict: NivaranToolResult['verdict'] = 'NO_KNOWN_MATCH';
 
-  if (!lower.startsWith('https://')) {
+  const isHttp = lower.startsWith('http://');
+  const isHttps = lower.startsWith('https://');
+  const hasApk = lower.endsWith('.apk') || lower.includes('/apk/') || lower.includes('download.apk');
+  const hasPunycode = lower.includes('xn--');
+  const hasShortener = ['bit.ly', 'tinyurl.com', 'is.gd', 'cutt.ly', 'rb.gy', 't.me'].some(s => lower.includes(s));
+  const suspiciousTLD = ['.xyz', '.top', '.club', '.apk', '.site', '.live', '.online', '.buzz'].some(t => lower.includes(t));
+
+  if (isHttp) {
     signals.push({
       type: 'warning',
-      label: 'Unencrypted Connection (HTTP)',
-      description: 'URL lacks secure SSL/TLS encryption. Sensitive payment credentials should never be entered on HTTP.'
+      label: 'Insecure HTTP Transport',
+      description: 'Website does not use encrypted HTTPS connection.'
     });
-    riskScore += 25;
     verdict = 'POTENTIAL_RISK_SIGNALS';
   }
 
-  if (lower.endsWith('.apk') || lower.includes('.apk?') || lower.includes('download.apk')) {
+  if (hasApk) {
     signals.push({
       type: 'critical',
-      label: 'Direct Android APK Executable Download',
-      description: 'Link delivers an Android Package Kit (.apk) file outside Google Play Store. High risk of screen-sharing or SMS-sniffing spyware.'
+      label: 'Direct APK App Download',
+      description: 'Link initiates direct Android APK download outside Google Play Store. High risk of Trojan / Remote access malware.'
     });
-    riskScore += 50;
     verdict = 'HIGH_RISK_ALERT';
   }
 
-  const suspiciousTlds = ['.xyz', '.top', '.live', '.tk', '.cc', '.buzz', '.rest', '.sbs'];
-  const matchedTld = suspiciousTlds.find(tld => lower.includes(tld));
-  if (matchedTld) {
+  if (hasPunycode) {
+    signals.push({
+      type: 'critical',
+      label: 'Punycode / Homograph Domain',
+      description: 'Domain contains encoded non-standard unicode characters to spoof brand spelling.'
+    });
+    verdict = 'HIGH_RISK_ALERT';
+  }
+
+  if (hasShortener) {
     signals.push({
       type: 'warning',
-      label: `Unusual TLD Extension (${matchedTld})`,
-      description: `Domain uses cheap or disposable top-level domain ${matchedTld}. Legitimate financial institutions use .gov.in, .bank.in, or established .com/.co.in domains.`
+      label: 'URL Shortener Used',
+      description: 'Shortened link obscures real destination server.'
     });
-    riskScore += 25;
-    verdict = verdict === 'HIGH_RISK_ALERT' ? 'HIGH_RISK_ALERT' : 'POTENTIAL_RISK_SIGNALS';
+    verdict = 'POTENTIAL_RISK_SIGNALS';
   }
 
-  if (lower.includes('bescom') || lower.includes('sbi-kyc') || lower.includes('bill-update')) {
+  if (suspiciousTLD) {
+    signals.push({
+      type: 'warning',
+      label: 'High-Risk Domain TLD Extension',
+      description: 'Domain uses a low-reputation or disposable domain registrar extension.'
+    });
+    verdict = 'POTENTIAL_RISK_SIGNALS';
+  }
+
+  if (lower.includes('bescom-bill-update.xyz') || lower.includes('bill-update')) {
+    verdict = 'HIGH_RISK_ALERT';
     signals.push({
       type: 'critical',
-      label: 'Typosquatting / Brand Mimicry in Domain Name',
-      description: 'Domain mimics state utility board or banking keywords on an unofficial third-party server.'
+      label: 'Known Phishing Domain in Nivaran',
+      description: 'Domain recorded in 17 electricity impersonation case dossiers.'
     });
-    riskScore = 95;
-    verdict = 'HIGH_RISK_ALERT';
   }
 
   return {
     toolId: 'url_check',
-    toolName: 'Check a Website / URL',
+    toolName: 'Check a URL / Website Link',
     timestamp: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
     query,
     summary: verdict === 'HIGH_RISK_ALERT'
-      ? 'High risk indicators detected: Phishing domain structure with untrusted APK or mimicry.'
+      ? 'High risk alert: Malicious indicators / known phishing pattern detected.'
       : verdict === 'POTENTIAL_RISK_SIGNALS'
-      ? 'Potential risk signals detected: Disposable domain extension or unencrypted transport.'
-      : 'Standard structure. Always verify the domain name matches the official verified portal.',
+      ? 'Potential warning signals detected in domain structure.'
+      : 'No malicious indicators or known reports found.',
     verdict,
     signals,
+    disclaimer: 'Passing basic checks does NOT guarantee a website is safe. Never enter bank credentials or download APKs from unsolicited links.',
     extractedData: {
       url: query
     },
-    suggestedAction: 'Do not enter passwords, OTPs, or banking details. Do not install downloaded APK files.'
+    suggestedAction: 'Do not open this URL on a device containing banking apps or UPI accounts.'
   };
 }
 
 // -------------------------------------------------------------
-// 4. CHECK A PAYMENT REQUEST MESSAGE
+// 4. MESSAGE ANALYSER (Specification #20)
 // -------------------------------------------------------------
 export function checkPaymentRequestTool(rawText: string): NivaranToolResult {
   const text = rawText.toLowerCase();
   const signals: Array<{ type: 'warning' | 'info' | 'critical'; label: string; description: string }> = [];
-  let riskScore = 30;
-  let verdict: NivaranToolResult['verdict'] = 'POTENTIAL_RISK_SIGNALS';
+  let verdict: NivaranToolResult['verdict'] = 'NO_KNOWN_MATCH';
+  let detectedPattern = 'General Communication';
 
-  if (text.includes('15 minute') || text.includes('tonight') || text.includes('disconnected') || text.includes('urgent') || text.includes('immediately')) {
+  // 1. Check Urgency
+  if (text.includes('15 minute') || text.includes('immediately') || text.includes('tonight') || text.includes('urgent') || text.includes('disconnected')) {
     signals.push({
-      type: 'critical',
-      label: 'Artificial Urgency / Time-Pressure Psychological Trigger',
-      description: 'Scammers induce panic by claiming utilities will be disconnected or accounts frozen within minutes.'
+      type: 'warning',
+      label: 'Artificial Urgency Imposed',
+      description: 'Creates psychological pressure (e.g. 15-minute deadline) to rush decision making.'
     });
-    riskScore += 30;
+    verdict = 'POTENTIAL_RISK_SIGNALS';
   }
 
-  if (text.includes('electricity') || text.includes('bill not updated') || text.includes('officer') || text.includes('kyc expired') || text.includes('sim blocked')) {
+  // 2. Impersonation
+  if (text.includes('electricity') || text.includes('bescom') || text.includes('discom') || text.includes('power')) {
+    detectedPattern = 'Electricity Disconnection Scam';
     signals.push({
       type: 'critical',
-      label: 'Impersonation of Public Utility or Service Desk',
-      description: 'Claiming to represent power DISCOM, gas authority, telecom provider, or bank KYC desk.'
+      label: 'Utility Board Impersonation',
+      description: 'Claims to represent state electricity board (BESCOM / DISCOM).'
     });
-    riskScore += 25;
-  }
-
-  if (text.includes('15 rupee') || text.includes('10 rupee') || text.includes('10 rs') || text.includes('verification fee') || text.includes('reversal')) {
+    verdict = 'HIGH_RISK_ALERT';
+  } else if (text.includes('kyc') || text.includes('pan card') || text.includes('sim block') || text.includes('5g upgrade')) {
+    detectedPattern = 'Telecom / Bank KYC Phishing';
     signals.push({
       type: 'critical',
-      label: 'Nominal Verification Payment Trap (₹10 / ₹15 Trick)',
-      description: 'Asking for a nominal ₹10/₹15 charge to capture UPI authorization or approve a high-value background transfer.'
+      label: 'KYC / Service Suspension Threat',
+      description: 'Claims bank account or SIM card will be blocked if verification is not completed.'
     });
-    riskScore += 35;
-  }
-
-  if (riskScore >= 70) {
+    verdict = 'HIGH_RISK_ALERT';
+  } else if (text.includes('police') || text.includes('cbi') || text.includes('customs') || text.includes('parcel')) {
+    detectedPattern = 'Digital Arrest & Coercion Extortion';
+    signals.push({
+      type: 'critical',
+      label: 'Law Enforcement Impersonation',
+      description: 'Threatens legal prosecution or arrest over a fictitious contraband parcel.'
+    });
     verdict = 'HIGH_RISK_ALERT';
   }
 
-  // Extract amount if present
-  let extractedAmt: number | undefined;
-  const amtMatch = rawText.match(/(?:rs\.?|inr|₹)\s*([\d,]+(?:\.\d{2})?)/i);
-  if (amtMatch) {
-    extractedAmt = parseFloat(amtMatch[1].replace(/,/g, ''));
+  // 3. Payment or Remote Access Triggers
+  if (text.includes('15 rupee') || text.includes('10 rupee') || text.includes('verification fee') || text.includes('test payment')) {
+    signals.push({
+      type: 'critical',
+      label: 'Deceptive Nominal "Verification" Payment',
+      description: 'Scammers ask for ₹10 or ₹15 to capture UPI PIN and debit higher amounts.'
+    });
+    verdict = 'HIGH_RISK_ALERT';
   }
+
+  if (text.includes('anap') || text.includes('anydesk') || text.includes('quicksupport') || text.includes('apk') || text.includes('teamviewer')) {
+    signals.push({
+      type: 'critical',
+      label: 'Remote Access / Screen-Share Demand',
+      description: 'Requests installation of remote-control software to read incoming 2FA OTPs.'
+    });
+    verdict = 'HIGH_RISK_ALERT';
+  }
+
+  // Extract phone if present
+  let extractedPhone: string | undefined;
+  const phoneMatch = rawText.match(/(?:\+91[\-\s]?)?[6-9]\d{9}/);
+  if (phoneMatch) extractedPhone = phoneMatch[0];
 
   return {
     toolId: 'payment_request_check',
-    toolName: 'Check a Payment Request',
+    toolName: 'Analyse Message',
     timestamp: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
-    query: rawText.slice(0, 100) + '...',
-    summary: verdict === 'HIGH_RISK_ALERT'
-      ? 'High risk indicators detected: Message matches known utility disconnection & nominal payment traps.'
-      : 'Elevated caution advised: Review sender credentials before taking any financial action.',
+    query: rawText.slice(0, 80) + '...',
+    summary: `Possible Pattern: ${detectedPattern}. High correlation with documented social engineering tactics.`,
     verdict,
     signals,
+    guidance: [
+      'Utility providers do not disconnect power over WhatsApp messages without statutory postal notice.',
+      'Banks and DISCOMs will never ask you to install AnyDesk, TeamViewer, or transfer verification fees.'
+    ],
+    disclaimer: 'This automated pattern assessment identifies known deception triggers to assist your case preparation.',
     extractedData: {
-      amount: extractedAmt
+      phoneNumber: extractedPhone,
+      rawSnippet: rawText
     },
-    suggestedAction: 'Do not click links or call the number in the message. Verify bill status on your electricity board official app or Bharat BillPay (BBPS).'
+    suggestedAction: 'Preserve this message as communication evidence. Do not call the number or click any links.'
   };
 }
 
 // -------------------------------------------------------------
-// 5. CHECK A QR CODE
+// 5. "BEFORE YOU PAY" DECISION TOOL (Specification #21)
 // -------------------------------------------------------------
-export function checkQrCodeTool(rawPayloadOrText: string): NivaranToolResult {
-  const text = rawPayloadOrText.trim();
+export interface BeforeYouPayAnswers {
+  whoContacted: string;
+  beneficiaryDisplayed: string;
+  wereYouPressured: boolean;
+  askedForPinOrOtp: boolean;
+  scanQrToReceive: boolean;
+  transferReason: string;
+}
+
+export function checkBeforeYouPayTool(answers: BeforeYouPayAnswers): NivaranToolResult {
   const signals: Array<{ type: 'warning' | 'info' | 'critical'; label: string; description: string }> = [];
+  let verdict: NivaranToolResult['verdict'] = 'NO_KNOWN_MATCH';
 
-  let extractedVpa = 'discom.billupdate.982@okaxis';
-  let extractedMerchant = 'POWER BILL DESK (Unverified)';
-  let extractedAmount = 18500;
-  let extractedNote = 'BILL_VERIFICATION';
+  // 1. Beneficiary Name Mismatch Check
+  const claimed = answers.whoContacted.toLowerCase();
+  const displayed = answers.beneficiaryDisplayed.toLowerCase();
 
-  if (text.includes('upi://pay')) {
-    const vpaMatch = text.match(/pa=([^&]+)/i);
-    const pnMatch = text.match(/pn=([^&]+)/i);
-    const amMatch = text.match(/am=([^&]+)/i);
-    const tnMatch = text.match(/tn=([^&]+)/i);
-
-    if (vpaMatch) extractedVpa = decodeURIComponent(vpaMatch[1]);
-    if (pnMatch) extractedMerchant = decodeURIComponent(pnMatch[1]);
-    if (amMatch) extractedAmount = parseFloat(amMatch[1]);
-    if (tnMatch) extractedNote = decodeURIComponent(tnMatch[1]);
+  if (claimed.includes('electricity') || claimed.includes('bescom') || claimed.includes('discom') || claimed.includes('bank') || claimed.includes('airline')) {
+    if (!displayed.includes('bescom') && !displayed.includes('discom') && !displayed.includes('bank') && !displayed.includes('ltd')) {
+      signals.push({
+        type: 'critical',
+        label: 'BENEFICIARY NAME MISMATCH',
+        description: `You were contacted on behalf of "${answers.whoContacted}", but UPI app displays recipient name as "${answers.beneficiaryDisplayed}". You are paying an unverified third-party account.`
+      });
+      verdict = 'HIGH_RISK_ALERT';
+    }
   }
 
-  signals.push({
-    type: 'critical',
-    label: 'CRITICAL SECURITY NOTICE: QR Codes DEBIT Money',
-    description: 'Scanning a QR code and typing your UPI PIN will ALWAYS DEBIT money from your bank account. A QR code can NEVER be used to receive money or receive refunds.'
-  });
+  // 2. Scan QR to receive money
+  if (answers.scanQrToReceive) {
+    signals.push({
+      type: 'critical',
+      label: 'QR CODE DEBIT TRAP',
+      description: 'You cannot receive money by scanning a QR code or entering your UPI PIN. Scanning a QR code ALWAYS transfers money OUT of your account.'
+    });
+    verdict = 'HIGH_RISK_ALERT';
+  }
 
-  signals.push({
-    type: 'warning',
-    label: 'Extracted Payee Details',
-    description: `Payee VPA: ${extractedVpa} · Display Name: ${extractedMerchant} · Amount: ₹${extractedAmount.toLocaleString('en-IN')}`
-  });
+  // 3. Asking for PIN / OTP
+  if (answers.askedForPinOrOtp) {
+    signals.push({
+      type: 'critical',
+      label: 'CREDENTIAL DISCLOSURE DEMAND',
+      description: 'Legitimate organizations never ask for your UPI PIN or SMS OTP over a phone call or chat.'
+    });
+    verdict = 'HIGH_RISK_ALERT';
+  }
+
+  // 4. Time Pressure
+  if (answers.wereYouPressured) {
+    signals.push({
+      type: 'warning',
+      label: 'PRESSURE TACTIC DETECTED',
+      description: 'Scammers create false urgency to rush you before you can verify with family or customer support.'
+    });
+    if (verdict === 'NO_KNOWN_MATCH') verdict = 'POTENTIAL_RISK_SIGNALS';
+  }
 
   return {
-    toolId: 'qr_check',
-    toolName: 'Check a QR Code',
+    toolId: 'before_you_pay',
+    toolName: 'Before You Pay Decision Tool',
     timestamp: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
-    query: `QR Payload: ${extractedVpa}`,
-    summary: `Extracted Payee VPA: ${extractedVpa}. Amount: ₹${extractedAmount.toLocaleString('en-IN')}. Scanning will DEBIT funds.`,
-    verdict: 'POTENTIAL_RISK_SIGNALS',
+    query: `Claimed: ${answers.whoContacted} → Payee: ${answers.beneficiaryDisplayed}`,
+    summary: verdict === 'HIGH_RISK_ALERT'
+      ? 'STOP: Critical fraud indicators detected. Do not proceed with payment.'
+      : 'Verify payee details before authorising transfer.',
+    verdict,
     signals,
-    extractedData: {
-      upiId: extractedVpa,
-      merchant: extractedMerchant,
-      amount: extractedAmount,
-      referenceNumber: extractedNote
-    },
-    suggestedAction: 'If a buyer or customer service agent told you to scan this code to receive payment, this is a scam. Do not scan.'
+    guidance: [
+      'Verify the recipient before authorising payment.',
+      'Always pay utility bills directly inside the official electricity DISCOM app or official BBPS portal.'
+    ],
+    disclaimer: 'This pre-payment safety tool evaluates transaction parameters against common fraud patterns.',
+    suggestedAction: 'Cancel the transaction. Do not enter your UPI PIN.'
   };
 }
 
 // -------------------------------------------------------------
-// 6. CHECK A BANK SMS / TRANSACTION PARSER
+// 6. CHECK A BANK SMS (Specification #16)
 // -------------------------------------------------------------
 export function parseBankSmsTool(smsText: string): NivaranToolResult {
   const signals: Array<{ type: 'warning' | 'info' | 'critical'; label: string; description: string }> = [];
 
-  // Extract Amount
   let amount = 18500;
   const amtMatch = smsText.match(/(?:rs\.?|inr|₹)\s*([\d,]+(?:\.\d{2})?)/i) || smsText.match(/([\d,]+(?:\.\d{2})?)\s*(?:rs\.?|inr|debited)/i);
   if (amtMatch) {
     amount = parseFloat(amtMatch[1].replace(/,/g, ''));
   }
 
-  // Extract UTR / RRN (12 digits)
   let utrNumber = '423719820491';
   const utrMatch = smsText.match(/(?:upi\/|utr|rrn|ref|reference)[\s/:]*(\d{10,13})/i) || smsText.match(/\b(\d{12})\b/);
   if (utrMatch) {
     utrNumber = utrMatch[1];
   }
 
-  // Extract Bank
   let bank = 'HDFC Bank';
   if (smsText.toLowerCase().includes('sbi') || smsText.toLowerCase().includes('state bank')) bank = 'State Bank of India (SBI)';
   else if (smsText.toLowerCase().includes('icici')) bank = 'ICICI Bank';
@@ -378,14 +475,12 @@ export function parseBankSmsTool(smsText: string): NivaranToolResult {
   else if (smsText.toLowerCase().includes('kotak')) bank = 'Kotak Mahindra Bank';
   else if (smsText.toLowerCase().includes('pnb')) bank = 'Punjab National Bank';
 
-  // Extract Account Masked
   let accountMasked = '9104';
   const accMatch = smsText.match(/(?:a\/c|acct|account)[\s\w]*(?:xx|x|\*)*(\d{4})/i);
   if (accMatch) {
     accountMasked = accMatch[1];
   }
 
-  // Extract VPA if present
   let recipientVpa: string | undefined;
   const vpaMatch = smsText.match(/([a-zA-Z0-9.\-_]{2,64}@[a-zA-Z]{2,32})/i);
   if (vpaMatch) {
@@ -400,10 +495,10 @@ export function parseBankSmsTool(smsText: string): NivaranToolResult {
 
   return {
     toolId: 'sms_parser',
-    toolName: 'Check a Bank SMS / Transaction Message',
+    toolName: 'Analyse Bank SMS',
     timestamp: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
     query: smsText.slice(0, 80) + '...',
-    summary: `Successfully parsed transaction: ₹${amount.toLocaleString('en-IN')} from ${bank} with UTR ${utrNumber}.`,
+    summary: `Parsed transaction: ₹${amount.toLocaleString('en-IN')} from ${bank} with UTR ${utrNumber}.`,
     verdict: 'PARSED_TRANSACTION',
     signals,
     extractedData: {
@@ -413,12 +508,64 @@ export function parseBankSmsTool(smsText: string): NivaranToolResult {
       senderAccountMasked: accountMasked,
       upiId: recipientVpa
     },
-    suggestedAction: 'Click [ Add Transaction to Case ] to attach this verified debit to your active Nivaran incident dossier.'
+    suggestedAction: 'Click [ Add Result to Case ] to attach this transaction evidence to your Nivaran case.'
   };
 }
 
 // -------------------------------------------------------------
-// 7. CHECK A PHONE CALL / MESSAGE STORY (Questionnaire)
+// 7. SCAN QR (Specification #16)
+// -------------------------------------------------------------
+export function checkQrCodeTool(rawPayload: string): NivaranToolResult {
+  const query = rawPayload.trim();
+  const lower = query.toLowerCase();
+  const signals: Array<{ type: 'warning' | 'info' | 'critical'; label: string; description: string }> = [];
+
+  let extractedVpa: string | undefined;
+  let extractedAmt: number | undefined;
+  let extractedMerchant: string | undefined;
+
+  const vpaMatch = query.match(/pa=([a-zA-Z0-9.\-_]{2,64}@[a-zA-Z]{2,32})/i);
+  if (vpaMatch) extractedVpa = vpaMatch[1];
+
+  const amtMatch = query.match(/am=([\d.]+)/i);
+  if (amtMatch) extractedAmt = parseFloat(amtMatch[1]);
+
+  const pnMatch = query.match(/pn=([^&]+)/i);
+  if (pnMatch) extractedMerchant = decodeURIComponent(pnMatch[1].replace(/\+/g, ' '));
+
+  signals.push({
+    type: 'info',
+    label: 'QR Payload Structure',
+    description: `Payee VPA: ${extractedVpa || 'Not found'} · Merchant: ${extractedMerchant || 'Not specified'} · Amount: ${extractedAmt ? `₹${extractedAmt}` : 'Dynamic / Any'}`
+  });
+
+  if (lower.includes('discom') || lower.includes('billupdate')) {
+    signals.push({
+      type: 'critical',
+      label: 'Known Fraudulent QR Payload',
+      description: 'Matches spoofed DISCOM electricity payment QR signature.'
+    });
+  }
+
+  return {
+    toolId: 'qr_check',
+    toolName: 'Scan QR',
+    timestamp: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+    query: rawPayload.slice(0, 60) + '...',
+    summary: `QR Payload Decoded: Payee ${extractedVpa || 'VPA'} · Pre-filled Amount: ${extractedAmt ? `₹${extractedAmt}` : 'Variable'}.`,
+    verdict: lower.includes('discom') ? 'HIGH_RISK_ALERT' : 'POTENTIAL_RISK_SIGNALS',
+    signals,
+    extractedData: {
+      upiId: extractedVpa,
+      amount: extractedAmt,
+      merchant: extractedMerchant
+    },
+    suggestedAction: 'Do not scan unverified QR codes sent over WhatsApp or SMS.'
+  };
+}
+
+// -------------------------------------------------------------
+// 8. CALL STORY QUESTIONNAIRE
 // -------------------------------------------------------------
 export interface CallStoryAnswers {
   whoContacted: string;
@@ -443,22 +590,6 @@ export function evaluateCallStoryTool(answers: CallStoryAnswers): NivaranToolRes
       description: 'Caller falsely claimed power disconnection to force instant compliance.'
     });
     riskScore += 25;
-  } else if (answers.whoContacted.includes('Airline') || answers.whatClaimed.includes('Refund')) {
-    detectedPattern = 'Search Engine Spoofing Customer Care Collect Scam';
-    signals.push({
-      type: 'critical',
-      label: 'Deceptive Refund Collect Request',
-      description: 'Scammer sent a collect request claiming it was required to receive refund.'
-    });
-    riskScore += 25;
-  } else if (answers.whoContacted.includes('Police') || answers.whatClaimed.includes('Parcel / Drug')) {
-    detectedPattern = 'Digital Arrest & Law Enforcement Extortion';
-    signals.push({
-      type: 'critical',
-      label: 'Coercive Extortion Pattern',
-      description: 'False claims of legal arrest warrants or seized contraband parcels.'
-    });
-    riskScore += 35;
   }
 
   if (answers.whatInstructed.includes('AnyDesk') || answers.whatInstructed.includes('QuickSupport') || answers.hasApkOrLink) {
@@ -485,10 +616,10 @@ export function evaluateCallStoryTool(answers: CallStoryAnswers): NivaranToolRes
 
   return {
     toolId: 'call_story_check',
-    toolName: 'Check a Phone Call / Message Story',
+    toolName: 'Analyse Interaction Story',
     timestamp: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
     query: `${answers.whoContacted}: ${answers.whatClaimed}`,
-    summary: `Preliminary Pattern Assessment: ${detectedPattern}. High risk of fraudulent intent.`,
+    summary: `Pattern Assessment: ${detectedPattern}. High probability of malicious social engineering.`,
     verdict,
     signals,
     suggestedAction: 'Cease communication immediately. Do not share OTPs, PINs, or install remote access software.'

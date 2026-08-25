@@ -17,7 +17,7 @@ export const BankDirectory: React.FC = () => {
 
   const filteredBanks = BANK_DIRECTORY.filter(b =>
     b.bankName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    b.category.toLowerCase().includes(searchTerm.toLowerCase())
+    (b.category || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const copyText = (id: string, text: string) => {
@@ -107,7 +107,7 @@ export const BankDirectory: React.FC = () => {
                 <div className="flex items-center justify-between font-mono font-bold text-text-primary pt-0.5">
                   <span className="truncate pr-2">{bank.smsBlockSyntax}</span>
                   <button
-                    onClick={() => copyText(bank.bankName, bank.smsBlockSyntax)}
+                    onClick={() => copyText(bank.bankName, bank.smsBlockSyntax || '')}
                     className="p-1 text-text-muted hover:text-brand-primary"
                     title="Copy SMS format"
                   >

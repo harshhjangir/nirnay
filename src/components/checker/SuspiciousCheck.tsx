@@ -118,11 +118,11 @@ export const SuspiciousCheck: React.FC = () => {
                   <span className="text-text-muted uppercase">EVALUATING IDENTIFIER:</span>
                   <span className="text-text-primary font-bold">{result.query}</span>
                   <span className="px-2 py-0.5 rounded bg-surface-subtle text-text-muted uppercase text-[10px]">
-                    {result.type.replace('_', ' ')}
+                    {(result.type || result.identifierType || 'identifier').replace('_', ' ')}
                   </span>
                 </div>
                 <h3 className="text-xl font-bold text-text-primary tracking-tight">
-                  {result.verdictTitle}
+                  {result.verdictTitle || result.threatLevelDisplay || 'Identifier Evaluation'}
                 </h3>
               </div>
 
@@ -130,9 +130,9 @@ export const SuspiciousCheck: React.FC = () => {
                 <div className="text-right font-mono">
                   <span className="text-[10px] text-text-muted uppercase block">Risk Score</span>
                   <span className={`text-2xl font-black ${
-                    result.riskScore >= 70 ? 'text-brand-red' : result.riskScore >= 40 ? 'text-brand-amber' : 'text-brand-green'
+                    (result.riskScore ?? 50) >= 70 ? 'text-brand-red' : (result.riskScore ?? 50) >= 40 ? 'text-brand-amber' : 'text-brand-green'
                   }`}>
-                    {result.riskScore}/100
+                    {result.riskScore ?? 50}/100
                   </span>
                 </div>
               </div>
@@ -150,7 +150,7 @@ export const SuspiciousCheck: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-2.5">
-                  {result.signals.map((sig, idx) => (
+                  {result.signals.map((sig: any, idx: number) => (
                     <div
                       key={idx}
                       className={`p-3.5 rounded-lg border flex items-start gap-3 ${
@@ -184,7 +184,7 @@ export const SuspiciousCheck: React.FC = () => {
                 Procedural Safety Guidance:
               </div>
               <ul className="space-y-1.5 text-xs text-text-secondary">
-                {result.guidance.map((g, i) => (
+                {result.guidance.map((g: any, i: number) => (
                   <li key={i} className="flex items-start gap-2">
                     <CheckCircle size={14} className="text-brand-green shrink-0 mt-0.5" />
                     <span>{g}</span>
@@ -199,7 +199,7 @@ export const SuspiciousCheck: React.FC = () => {
           <div className="p-4 rounded-card bg-surface-elevated border border-surface-border text-xs text-text-muted flex items-start gap-2.5 shadow-subtle">
             <Info size={16} className="text-brand-blue shrink-0 mt-0.5" />
             <p className="leading-relaxed font-sans">
-              <strong className="text-text-secondary font-mono">Probabilistic Transparency:</strong> {result.disclaimer}
+              <strong className="text-text-secondary font-mono">Probabilistic Transparency:</strong> {result.disclaimer || 'Identifier evaluation is based on known scam patterns and client-side heuristics.'}
             </p>
           </div>
 

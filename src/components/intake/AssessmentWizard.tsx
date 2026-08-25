@@ -14,8 +14,8 @@ export const AssessmentWizard: React.FC = () => {
   const stepLabels = [
     { number: 1, label: 'Incident Category' },
     { number: 2, label: 'Describe What Happened' },
-    { number: 3, label: 'Transaction Details' },
-    { number: 4, label: 'Evidence Upload' },
+    { number: 3, label: 'Payment Evidence & Extraction' },
+    { number: 4, label: 'Additional Evidence & Complainant' },
     { number: 5, label: 'Review & Submit' }
   ];
 

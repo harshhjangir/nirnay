@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useIncident } from './context/IncidentContext';
 import { Header } from './components/layout/Header';
 import { Footer } from './components/layout/Footer';
@@ -13,10 +13,16 @@ import { SuspiciousCheck } from './components/checker/SuspiciousCheck';
 import { PreventionCenter } from './components/learn/PreventionCenter';
 import { BankDirectory } from './components/official/BankDirectory';
 import { ArchitectureExplainer } from './components/about/ArchitectureExplainer';
+import { PrivacySecurityExplainer } from './components/about/PrivacySecurityExplainer';
 import { LoginModal } from './components/auth/LoginModal';
 
 export const App: React.FC = () => {
-  const { activeTab } = useIncident();
+  const { activeTab, intakeStep } = useIncident();
+
+  // Scroll to top whenever tab or intake step changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [activeTab, intakeStep]);
 
   return (
     <div className="min-h-screen flex flex-col bg-bg-primary text-text-primary">
@@ -40,7 +46,7 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* 6-Step Incident Intake Wizard */}
+        {/* 5-Step Incident Intake Wizard */}
         {activeTab === 'intake' && <AssessmentWizard />}
 
         {/* Citizen Dashboard (My NIVARAN) */}
@@ -49,11 +55,11 @@ export const App: React.FC = () => {
         {/* Detailed Case Dossier & Intelligence Hub */}
         {activeTab === 'case_details' && <CaseDetailsView />}
 
-        {/* Nivaran Investigation Mini-Tools Hub */}
-        {activeTab === 'tools' && <NivaranToolsHub />}
-
         {/* Public Case Status Tracking */}
         {activeTab === 'track_case' && <TrackCasePublic />}
+
+        {/* Nivaran Investigation Mini-Tools Hub */}
+        {activeTab === 'tools' && <NivaranToolsHub />}
 
         {/* Pre-Payment Suspicious Identifier Checker */}
         {activeTab === 'checker' && <SuspiciousCheck />}
@@ -64,11 +70,14 @@ export const App: React.FC = () => {
         {/* Prevention & Educational Playbooks */}
         {activeTab === 'learn' && <PreventionCenter />}
 
+        {/* Privacy & Confidential Computing Architecture */}
+        {activeTab === 'privacy_security' && <PrivacySecurityExplainer />}
+
         {/* Platform Architecture & About */}
         {activeTab === 'about' && <ArchitectureExplainer />}
       </main>
 
-      {/* Persistent Light Institutional Footer */}
+      {/* Persistent Cohesive Card-Style Footer */}
       <Footer />
 
       {/* Authentication Dialog (Login / Register / CAPTCHA) */}

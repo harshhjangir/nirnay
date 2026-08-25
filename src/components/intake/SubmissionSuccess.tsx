@@ -4,8 +4,10 @@ import {
   Download,
   ExternalLink,
   FileDown,
+  FolderOpen,
   PhoneCall,
   Search,
+  Shield,
   ShieldCheck,
   TrendingUp,
   UserCheck
@@ -25,20 +27,20 @@ export const SubmissionSuccess: React.FC = () => {
       {/* Main Success Card */}
       <div className="p-8 rounded-card-lg bg-surface border border-surface-border shadow-card text-center space-y-5">
         
-        {/* Restrained Success Badge */}
+        {/* Success Icon */}
         <div className="h-12 w-12 rounded-full bg-brand-green-soft border border-brand-green/30 flex items-center justify-center text-brand-green mx-auto">
           <CheckCircle2 size={24} />
         </div>
 
         <div>
           <span className="text-xs font-mono font-bold text-brand-green uppercase tracking-wider">
-            INCIDENT SUBMITTED SUCCESSFULLY
+            FRAUD CASE ORGANIZED &bull; NIVARAN INTELLIGENCE ACTIVE
           </span>
           <h2 className="text-2xl font-display font-extrabold text-text-primary mt-1">
             Your Case Dossier is Ready
           </h2>
           <p className="text-xs text-text-secondary mt-1">
-            NIVARAN has compiled your transactions and narrative into an official case package.
+            Nivaran has extracted, verified, and structured your evidence into a continuous case file.
           </p>
         </div>
 
@@ -51,46 +53,46 @@ export const SubmissionSuccess: React.FC = () => {
             {activeCase.caseId}
           </div>
           <div className="text-xs text-text-secondary font-sans pt-1">
-            Disputed Loss: <strong className="text-brand-red font-mono">₹{totalAmount.toLocaleString('en-IN')}</strong> &bull; Status: <span className="font-semibold text-brand-blue">Incident Reported</span>
+            Disputed Loss: <strong className="text-brand-red font-mono">₹{totalAmount.toLocaleString('en-IN')}</strong> &bull; Status: <span className="font-semibold text-brand-primary">Case Recorded</span>
           </div>
         </div>
 
         {/* Immediate Next Action Banner */}
-        <div className="p-4 rounded-lg bg-brand-red-soft border border-brand-red/30 text-left space-y-2">
-          <div className="text-xs font-bold text-brand-red font-mono flex items-center gap-1.5">
+        <div className="p-4 rounded-lg bg-brand-soft border border-brand-primary/30 text-left space-y-2">
+          <div className="text-xs font-bold text-brand-primary font-mono flex items-center gap-1.5 uppercase">
             <PhoneCall size={14} />
-            CRITICAL FIRST ACTION — CALL 1930 NOW
+            PRIMARY NEXT ACTION &bull; DIAL 1930 NOW
           </div>
           <p className="text-xs text-text-secondary leading-relaxed font-sans">
-            Quote your 12-digit UTR (<strong className="font-mono text-text-primary">{primaryUtr}</strong>) and Case ID (<strong className="font-mono text-text-primary">{activeCase.caseId}</strong>) to the 1930 operator to place a lien on the recipient bank node.
+            Quote your 12-digit UTR (<strong className="font-mono text-text-primary">{primaryUtr}</strong>) and Bank (<strong className="font-semibold text-text-primary">{activeCase.transactions[0]?.senderBank || 'HDFC Bank'}</strong>) to the 1930 helpline to trigger an inter-bank lien freeze before funds are layered.
           </p>
         </div>
 
         {/* Action Buttons */}
         <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
           <button
-            onClick={() => generateCasePdf(activeCase)}
-            className="w-full sm:w-auto px-5 py-3 rounded-lg bg-brand-primary hover:bg-brand-hover text-white font-semibold text-xs transition-colors shadow-subtle flex items-center justify-center gap-2"
+            onClick={() => selectCase(activeCase.caseId)}
+            className="w-full sm:w-auto px-6 py-3 rounded-lg bg-brand-primary hover:bg-brand-hover text-white font-bold text-xs transition-colors shadow-card flex items-center justify-center gap-2"
           >
-            <FileDown size={15} />
-            <span>Download Case Summary (PDF)</span>
+            <FolderOpen size={15} />
+            <span>Open Case in Intelligence Hub</span>
           </button>
 
           <button
-            onClick={() => selectCase(activeCase.caseId)}
-            className="w-full sm:w-auto px-5 py-3 rounded-lg bg-surface hover:bg-surface-elevated text-text-primary border border-surface-border font-semibold text-xs transition-colors flex items-center justify-center gap-2"
+            onClick={() => generateCasePdf(activeCase)}
+            className="w-full sm:w-auto px-5 py-3 rounded-lg bg-surface hover:bg-surface-elevated text-text-primary border border-surface-border font-semibold text-xs transition-colors flex items-center justify-center gap-2 shadow-subtle"
           >
-            <TrendingUp size={15} className="text-brand-blue" />
-            <span>Track Case in Dashboard</span>
+            <FileDown size={15} className="text-brand-primary" />
+            <span>Download PDF Summary</span>
           </button>
 
           <a
             href="https://cybercrime.gov.in"
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full sm:w-auto px-5 py-3 rounded-lg bg-surface-subtle hover:bg-surface-elevated text-text-secondary hover:text-text-primary border border-surface-border font-semibold text-xs transition-colors flex items-center justify-center gap-1.5"
+            className="w-full sm:w-auto px-4 py-3 rounded-lg bg-surface-subtle hover:bg-surface-elevated text-text-secondary hover:text-text-primary border border-surface-border font-semibold text-xs transition-colors flex items-center justify-center gap-1.5"
           >
-            <span>Continue to NCRP</span>
+            <span>NCRP Portal</span>
             <ExternalLink size={13} />
           </a>
         </div>

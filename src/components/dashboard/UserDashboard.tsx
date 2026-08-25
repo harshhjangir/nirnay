@@ -13,6 +13,7 @@ import {
   FileDown,
   FileText,
   FolderOpen,
+  FolderPlus,
   Layers,
   LogOut,
   PhoneCall,
@@ -21,14 +22,14 @@ import {
   Shield,
   ShieldAlert,
   ShieldCheck,
+  Sparkles,
   TrendingUp,
   User,
   Zap
 } from 'lucide-react';
 import { useIncident } from '../../context/IncidentContext';
-import { StatusProgressBadge, RiskBadge, UrgencyBadge } from '../common/Badge';
-import { StatCard } from '../common/StatCard';
 import { calculateCaseReadiness } from '../../services/caseReadinessEngine';
+import { StatusProgressBadge, RiskBadge } from '../common/Badge';
 
 export const UserDashboard: React.FC = () => {
   const {
@@ -38,17 +39,11 @@ export const UserDashboard: React.FC = () => {
     setActiveTab,
     setIntakeStep,
     notifications,
-    markNotificationRead
+    markNotificationRead,
+    loadDemoElectricityScenario
   } = useIncident();
 
-  const [activeSidebarTab, setActiveSidebarTab] = useState<'overview' | 'cases' | 'notifications' | 'profile'>('overview');
-
-  const totalDisputedLoss = cases.reduce(
-    (sum, c) => sum + c.transactions.reduce((tSum, tx) => tSum + (tx.amount || 0), 0),
-    0
-  );
-
-  const activeCasesCount = cases.filter(c => c.statusProgress !== 'closed').length;
+  const [activeSidebarTab, setActiveSidebarTab] = useState<'cases' | 'notifications' | 'profile'>('cases');
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl space-y-8">
@@ -57,10 +52,10 @@ export const UserDashboard: React.FC = () => {
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-xs font-mono font-bold text-brand-primary uppercase">
             <Shield size={14} />
-            <span>MY NIVARAN CASE INTELLIGENCE DASHBOARD</span>
+            <span>NIVARAN CASE INTELLIGENCE DASHBOARD</span>
           </div>
           <h1 className="text-2xl font-display font-extrabold text-text-primary">
-            Welcome back{user ? `, ${user.name}` : ''}
+            My Cases{user ? ` &bull; ${user.name}` : ''}
           </h1>
           <p className="text-xs text-text-secondary">
             Manage your persistent fraud cases, track official reference numbers, and resolve evidence gaps.
@@ -73,10 +68,10 @@ export const UserDashboard: React.FC = () => {
               setIntakeStep(1);
               setActiveTab('intake');
             }}
-            className="px-4 py-2.5 rounded-lg bg-brand-primary hover:bg-brand-hover text-white font-semibold text-xs transition-colors shadow-subtle flex items-center gap-1.5"
+            className="px-4 py-2.5 rounded-lg bg-brand-primary hover:bg-brand-hover text-white font-bold text-xs transition-colors shadow-subtle flex items-center gap-1.5"
           >
-            <PlusCircle size={14} />
-            <span>Report New Incident</span>
+            <FolderPlus size={14} />
+            <span>Build New Case</span>
           </button>
         </div>
       </div>
@@ -88,24 +83,10 @@ export const UserDashboard: React.FC = () => {
         <div className="lg:col-span-3 space-y-2">
           <div className="p-2 rounded-card bg-surface border border-surface-border shadow-subtle space-y-1 text-xs font-semibold">
             <button
-              onClick={() => setActiveSidebarTab('overview')}
-              className={`w-full text-left px-3.5 py-2.5 rounded-lg transition-colors flex items-center justify-between ${
-                activeSidebarTab === 'overview'
-                  ? 'bg-brand-soft text-brand-primary border border-brand-primary/20'
-                  : 'text-text-secondary hover:text-text-primary hover:bg-surface-subtle'
-              }`}
-            >
-              <span className="flex items-center gap-2">
-                <Layers size={15} />
-                <span>Overview</span>
-              </span>
-            </button>
-
-            <button
               onClick={() => setActiveSidebarTab('cases')}
               className={`w-full text-left px-3.5 py-2.5 rounded-lg transition-colors flex items-center justify-between ${
                 activeSidebarTab === 'cases'
-                  ? 'bg-brand-soft text-brand-primary border border-brand-primary/20'
+                  ? 'bg-brand-soft text-brand-primary border border-brand-primary/20 font-bold'
                   : 'text-text-secondary hover:text-text-primary hover:bg-surface-subtle'
               }`}
             >
@@ -122,13 +103,13 @@ export const UserDashboard: React.FC = () => {
               onClick={() => setActiveSidebarTab('notifications')}
               className={`w-full text-left px-3.5 py-2.5 rounded-lg transition-colors flex items-center justify-between ${
                 activeSidebarTab === 'notifications'
-                  ? 'bg-brand-soft text-brand-primary border border-brand-primary/20'
+                  ? 'bg-brand-soft text-brand-primary border border-brand-primary/20 font-bold'
                   : 'text-text-secondary hover:text-text-primary hover:bg-surface-subtle'
               }`}
             >
               <span className="flex items-center gap-2">
                 <Bell size={15} />
-                <span>Alerts & Notifications</span>
+                <span>Case Updates</span>
               </span>
               {notifications.filter(n => !n.read).length > 0 && (
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-brand-red text-white font-bold">
@@ -139,234 +120,238 @@ export const UserDashboard: React.FC = () => {
 
             <button
               onClick={() => setActiveSidebarTab('profile')}
-              className={`w-full text-left px-3.5 py-2.5 rounded-lg transition-colors flex items-center gap-2 ${
+              className={`w-full text-left px-3.5 py-2.5 rounded-lg transition-colors flex items-center justify-between ${
                 activeSidebarTab === 'profile'
-                  ? 'bg-brand-soft text-brand-primary border border-brand-primary/20'
+                  ? 'bg-brand-soft text-brand-primary border border-brand-primary/20 font-bold'
                   : 'text-text-secondary hover:text-text-primary hover:bg-surface-subtle'
               }`}
             >
-              <User size={15} />
-              <span>Citizen Profile</span>
+              <span className="flex items-center gap-2">
+                <User size={15} />
+                <span>Profile &amp; Settings</span>
+              </span>
             </button>
           </div>
 
-          {/* Quick Investigation Tools Prompt */}
-          <div className="p-4 rounded-card bg-surface border border-surface-border shadow-subtle space-y-2 text-xs">
-            <div className="font-bold text-text-primary flex items-center gap-1.5">
-              <Zap size={14} className="text-brand-primary" />
-              <span>Nivaran Mini-Tools</span>
+          {/* Quick Demo Reset Card */}
+          <div className="p-3.5 rounded-card bg-surface-subtle border border-surface-border text-xs space-y-2">
+            <div className="text-[11px] font-mono font-bold text-text-primary uppercase flex items-center gap-1.5">
+              <Sparkles size={13} className="text-brand-primary" />
+              <span>Evaluation Preset</span>
             </div>
-            <p className="text-text-muted leading-relaxed font-sans text-[11px]">
-              Evaluate UPI handles, phone numbers, or parse bank debit SMS alerts directly into your case.
+            <p className="text-[11px] text-text-muted leading-relaxed">
+              Load the benchmark electricity impersonation fraud case (₹18,500 loss with full evidence).
             </p>
             <button
-              onClick={() => setActiveTab('tools')}
-              className="pt-1 text-xs font-semibold text-brand-primary hover:underline flex items-center gap-1"
+              type="button"
+              onClick={loadDemoElectricityScenario}
+              className="w-full py-2 rounded-lg bg-surface hover:bg-surface-elevated text-brand-primary border border-surface-border font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-subtle"
             >
-              <span>Open Tool Suite</span>
-              <ChevronRight size={13} />
+              <span>Load Electricity Demo Case</span>
             </button>
           </div>
         </div>
 
-        {/* Right 9 Cols: Content */}
+        {/* Right 9 Cols: Content Area */}
         <div className="lg:col-span-9 space-y-6">
           
-          {(activeSidebarTab === 'overview' || activeSidebarTab === 'cases') && (
-            <div className="space-y-6 animate-in fade-in">
-              
-              {/* Stat Row */}
-              {activeSidebarTab === 'overview' && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <StatCard
-                    label="Active Cases"
-                    value={activeCasesCount}
-                    subValue={`${cases.length} total registered case file(s)`}
-                    badge={<span className="text-xs font-mono font-bold text-brand-blue">TRACKING</span>}
-                  />
-
-                  <StatCard
-                    label="Total Disputed Loss"
-                    value={`₹${totalDisputedLoss.toLocaleString('en-IN')}`}
-                    subValue="Across all registered incident records"
-                    badge={<span className="text-xs font-mono font-bold text-brand-red">DISPUTED</span>}
-                  />
-
-                  <StatCard
-                    label="Active Intelligence"
-                    value="4 References"
-                    subValue="Bank, 1930 & NCRP tracked"
-                    highlight
-                    badge={<span className="text-xs font-mono font-bold text-brand-green">SYNCED</span>}
-                  />
-                </div>
-              )}
-
-              {/* Cases List */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-text-primary font-display">
-                    {activeSidebarTab === 'cases' ? 'All Case Dossiers' : 'Active Cases'}
+          {/* TAB 1: MY CASES (Specification #12) */}
+          {activeSidebarTab === 'cases' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-display font-extrabold text-text-primary">
+                    Active Fraud Cases ({cases.length})
                   </h2>
+                  <p className="text-xs text-text-secondary">
+                    Select a case to inspect evidence reconciliation, linked official tickets, and response interpretations.
+                  </p>
                 </div>
+              </div>
 
+              {/* Case Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {cases.map((c) => {
-                  const cTotal = c.transactions.reduce((s, tx) => s + (tx.amount || 0), 0);
                   const readiness = calculateCaseReadiness(c);
+                  const totalAmt = c.transactions.reduce((s, tx) => s + (tx.amount || 0), 0);
+                  const primaryBank = c.transactions[0]?.senderBank || 'Bank';
+                  const pendingItem = readiness.items.find(i => !i.available)?.label || 'All core items complete';
 
                   return (
                     <div
                       key={c.caseId}
-                      className="p-5 rounded-card-lg bg-surface border border-surface-border hover:border-surface-border-active hover:shadow-card transition-all space-y-3.5"
+                      className="p-5 rounded-card-lg bg-surface border border-surface-border hover:border-brand-primary/40 transition-all shadow-subtle flex flex-col justify-between space-y-4 group"
                     >
-                      {/* Top Bar */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-surface-border/60 pb-3">
-                        <div className="flex items-center gap-3">
-                          <span className="font-mono text-base font-bold text-brand-primary">
+                      {/* Top Strip */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono text-xs font-bold text-brand-primary bg-brand-soft px-2 py-0.5 rounded border border-brand-primary/20">
                             {c.caseId}
                           </span>
-                          <StatusProgressBadge status={c.statusProgress} />
-                          <RiskBadge level={c.analysis.riskLevel} size="sm" />
+                          <span className="text-[10px] font-mono text-text-muted">
+                            Last update: {c.updatedAt ? new Date(c.updatedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + ', ' + new Date(c.updatedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '24 Aug, 14:20'}
+                          </span>
                         </div>
 
-                        <div className="text-xs font-mono text-text-muted flex items-center gap-1.5">
-                          <Calendar size={13} />
-                          <span>Filed: {new Date(c.createdAt).toLocaleDateString('en-IN')}</span>
+                        <div>
+                          <div className="text-sm font-bold text-text-primary group-hover:text-brand-primary transition-colors">
+                            {c.category === 'upi_fraud' ? 'UPI / Social Engineering' : c.category === 'fake_customer_care' ? 'Search Engine Customer Care Scam' : c.category.replace('_', ' ').toUpperCase()}
+                          </div>
+                          <div className="text-xs text-text-muted line-clamp-1 mt-0.5">
+                            {c.whatHappenedSummary}
+                          </div>
+                        </div>
+
+                        {/* Amount */}
+                        <div className="pt-1">
+                          <span className="text-xl font-bold font-mono text-text-primary">
+                            ₹{totalAmt.toLocaleString('en-IN')}
+                          </span>
+                          <span className="text-xs text-text-muted font-sans ml-1.5">
+                            ({primaryBank})
+                          </span>
                         </div>
                       </div>
 
-                      {/* Main Data Layout */}
-                      <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 text-xs">
-                        
-                        <div className="sm:col-span-8 space-y-2">
-                          <div className="font-bold text-text-primary text-sm">
-                            {c.analysis.likelyType}
-                          </div>
-                          <p className="text-text-secondary line-clamp-2 leading-relaxed font-sans">
-                            {c.whatHappenedSummary}
-                          </p>
-
-                          {/* Prioritized Next Action Callout */}
-                          <div className="p-2.5 rounded bg-brand-red-soft/60 border border-brand-red/20 font-sans">
-                            <span className="font-mono text-[10px] font-bold text-brand-red uppercase block mb-0.5">NEXT ACTION:</span>
-                            <span className="text-text-primary font-medium text-xs">{c.nextAction.title}</span>
-                          </div>
+                      {/* Middle Data Stats */}
+                      <div className="p-3 rounded-lg bg-surface-subtle border border-surface-border space-y-1.5 text-xs font-mono">
+                        <div className="flex justify-between items-center">
+                          <span className="text-text-muted text-[11px]">Nivaran Case Readiness:</span>
+                          <span className="font-bold text-brand-primary text-xs">
+                            {readiness.availableCount} / {readiness.totalCount} ({readiness.percentage}%)
+                          </span>
                         </div>
-
-                        <div className="sm:col-span-4 flex flex-col justify-between sm:items-end font-mono">
-                          <div className="text-right">
-                            <span className="text-[10px] text-text-muted uppercase block">Disputed Loss</span>
-                            <span className="text-base font-bold text-brand-red">
-                              ₹{cTotal.toLocaleString('en-IN')}
+                        <div className="flex justify-between items-center">
+                          <span className="text-text-muted text-[11px]">Pending:</span>
+                          <span className="text-text-secondary text-[11px] truncate max-w-[160px]">
+                            {pendingItem}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-text-muted text-[11px]">External References:</span>
+                          <span className="font-bold text-text-primary text-xs">
+                            {c.externalReferences.length} Connected
+                          </span>
+                        </div>
+                        {c.responses.length > 0 && (
+                          <div className="flex justify-between items-center pt-1 border-t border-surface-border/60">
+                            <span className="text-brand-amber font-semibold text-[11px]">Latest Response:</span>
+                            <span className="text-text-primary font-bold text-[11px] truncate max-w-[150px]">
+                              {c.responses[0].decision.split('(')[0]}
                             </span>
                           </div>
-
-                          <div className="text-right text-[11px] text-text-muted mt-2">
-                            <span>Readiness: <strong className="text-brand-primary">{readiness.availableCount} / {readiness.totalCount} items</strong></span>
-                          </div>
-
-                          <button
-                            onClick={() => selectCase(c.caseId)}
-                            className="mt-3 px-4 py-2 rounded-lg bg-brand-primary text-white font-semibold text-xs shadow-subtle hover:bg-brand-hover transition-colors flex items-center gap-1 self-start sm:self-end"
-                          >
-                            <span>Open Case Intelligence</span>
-                            <ChevronRight size={14} />
-                          </button>
-                        </div>
-
+                        )}
                       </div>
 
-                      {/* Bottom Footer Info */}
-                      <div className="pt-2 border-t border-surface-border/50 flex flex-wrap items-center justify-between text-[11px] font-mono text-text-muted">
-                        <span>External References: <strong className="text-text-primary">{c.externalReferences.length} Tracked</strong></span>
-                        <span>Evidence: {c.evidence.length} Artifacts</span>
-                        <span>Debited: {c.transactions[0]?.senderBank || 'Bank'}</span>
+                      {/* Bottom Action */}
+                      <div className="pt-1 flex items-center justify-between border-t border-surface-border">
+                        <span className="text-[11px] font-mono text-text-muted flex items-center gap-1">
+                          <FileCheck size={13} className="text-brand-primary" />
+                          {c.evidence.length} Evidence Items
+                        </span>
+                        <button
+                          onClick={() => selectCase(c.caseId)}
+                          className="px-4 py-2 rounded-lg bg-brand-primary hover:bg-brand-hover text-white font-bold text-xs transition-colors shadow-subtle flex items-center gap-1.5"
+                        >
+                          <span>Open Case</span>
+                          <ChevronRight size={13} />
+                        </button>
                       </div>
+
                     </div>
                   );
                 })}
               </div>
-
             </div>
           )}
 
-          {/* Notifications Tab */}
+          {/* TAB 2: CASE NOTIFICATIONS */}
           {activeSidebarTab === 'notifications' && (
-            <div className="p-6 rounded-card-lg bg-surface border border-surface-border shadow-subtle space-y-4 animate-in fade-in">
-              <div className="flex items-center justify-between border-b border-surface-border/60 pb-3">
-                <h2 className="text-base font-bold text-text-primary">
-                  Case Activity & Escalation Alerts
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-lg font-display font-extrabold text-text-primary">
+                  Case Activity &amp; Updates
                 </h2>
-                <span className="text-xs text-text-muted font-mono">
-                  {notifications.length} total alert(s)
-                </span>
+                <p className="text-xs text-text-secondary">
+                  Notifications regarding official references, response interpretations, and evidence alerts.
+                </p>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {notifications.map((n) => (
                   <div
                     key={n.id}
-                    onClick={() => markNotificationRead(n.id)}
-                    className={`p-4 rounded-lg border transition-all cursor-pointer space-y-1 ${
-                      n.read
-                        ? 'bg-surface border-surface-border text-text-secondary'
-                        : 'bg-brand-soft/40 border-brand-primary/30 text-text-primary font-medium'
+                    className={`p-4 rounded-card border transition-all text-xs space-y-1.5 ${
+                      n.read ? 'bg-surface border-surface-border opacity-75' : 'bg-surface border-brand-primary/30 shadow-subtle'
                     }`}
                   >
-                    <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-2 font-bold font-sans">
-                        {!n.read && <span className="h-2 w-2 rounded-full bg-brand-primary" />}
-                        <span>{n.title}</span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className={`h-2 w-2 rounded-full ${n.read ? 'bg-slate-300' : 'bg-brand-primary'}`} />
+                        <span className="font-bold text-text-primary text-sm font-sans">{n.title}</span>
                       </div>
                       <span className="text-[11px] font-mono text-text-muted">{n.timestamp}</span>
                     </div>
-                    <p className="text-xs text-text-secondary font-sans leading-relaxed">
+                    <p className="text-text-secondary font-sans leading-relaxed">
                       {n.message}
                     </p>
+                    {n.caseId && (
+                      <div className="pt-2 flex items-center justify-between border-t border-surface-border/60">
+                        <span className="font-mono text-[11px] text-brand-primary">Case: {n.caseId}</span>
+                        <button
+                          onClick={() => {
+                            markNotificationRead(n.id);
+                            selectCase(n.caseId!);
+                          }}
+                          className="text-xs font-bold text-brand-primary hover:underline"
+                        >
+                          Open Case Details &rarr;
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Profile Tab */}
+          {/* TAB 3: PROFILE & SETTINGS */}
           {activeSidebarTab === 'profile' && (
-            <div className="p-6 rounded-card-lg bg-surface border border-surface-border shadow-subtle space-y-5 animate-in fade-in">
-              <div className="border-b border-surface-border/60 pb-3">
-                <h2 className="text-base font-bold text-text-primary">
-                  Citizen Identification Profile
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-lg font-display font-extrabold text-text-primary">
+                  Citizen Profile &amp; Privacy Configuration
                 </h2>
-                <p className="text-xs text-text-muted">
-                  Used when generating formal bank dispute letters and NCRP legal dossier packages.
+                <p className="text-xs text-text-secondary">
+                  Manage your authenticated profile and client-side encryption settings.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                <div>
-                  <label className="block text-text-muted font-medium mb-1">Full Name</label>
-                  <div className="p-2.5 rounded-lg bg-surface-subtle border border-surface-border font-semibold text-text-primary">
-                    {user?.name || 'Rajesh Sharma'}
+              <div className="p-6 rounded-card bg-surface border border-surface-border space-y-4 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[11px] text-text-muted uppercase font-bold block mb-1">Full Name</label>
+                    <div className="p-2.5 rounded-lg bg-surface-subtle border border-surface-border font-semibold text-text-primary">
+                      {user?.name || 'Rajesh Sharma'}
+                    </div>
                   </div>
-                </div>
-
-                <div>
-                  <label className="block text-text-muted font-medium mb-1">Registered Mobile</label>
-                  <div className="p-2.5 rounded-lg bg-surface-subtle border border-surface-border font-mono text-text-primary">
-                    {user?.phone || '+91 98451 92837'}
+                  <div>
+                    <label className="text-[11px] text-text-muted uppercase font-bold block mb-1">Email</label>
+                    <div className="p-2.5 rounded-lg bg-surface-subtle border border-surface-border font-mono text-text-primary">
+                      {user?.email || 'rajesh.sharma@example.com'}
+                    </div>
                   </div>
-                </div>
-
-                <div>
-                  <label className="block text-text-muted font-medium mb-1">Email</label>
-                  <div className="p-2.5 rounded-lg bg-surface-subtle border border-surface-border font-mono text-text-primary">
-                    {user?.email || 'rajesh.sharma@example.com'}
+                  <div>
+                    <label className="text-[11px] text-text-muted uppercase font-bold block mb-1">Mobile Phone</label>
+                    <div className="p-2.5 rounded-lg bg-surface-subtle border border-surface-border font-mono text-text-primary">
+                      {user?.phone || '+91 98451 92837'}
+                    </div>
                   </div>
-                </div>
-
-                <div>
-                  <label className="block text-text-muted font-medium mb-1">Case Encryption & Storage</label>
-                  <div className="p-2.5 rounded-lg bg-brand-green-soft border border-brand-green/20 font-mono text-brand-green font-semibold">
-                    Client Browser Storage (Local Only)
+                  <div>
+                    <label className="text-[11px] text-text-muted uppercase font-bold block mb-1">Environment Mode</label>
+                    <div className="p-2.5 rounded-lg bg-surface-subtle border border-surface-border font-mono text-brand-primary font-bold">
+                      {user?.isDemo ? 'Evaluation Demo Citizen' : 'Registered Citizen Account'}
+                    </div>
                   </div>
                 </div>
               </div>

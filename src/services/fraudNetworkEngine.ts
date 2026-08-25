@@ -64,7 +64,7 @@ export function findMatchingCampaign(suspects: SuspectIdentifier[]): ConnectedCa
     const cleanVal = susp.value.toLowerCase().replace(/[\s\+\-]/g, '');
 
     for (const campaign of KNOWN_CAMPAIGNS_DATABASE) {
-      const match = campaign.matchingIdentifiers.some(id => {
+      const match = (campaign.matchingIdentifiers || []).some((id: string) => {
         const cleanId = id.toLowerCase().replace(/[\s\+\-]/g, '');
         return cleanVal.includes(cleanId) || cleanId.includes(cleanVal);
       });

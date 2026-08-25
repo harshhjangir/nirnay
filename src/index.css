@@ -60,6 +60,11 @@
 
 body {
   background-color: #F7F8FA;
+  background-image: 
+    radial-gradient(circle at 15% 10%, rgba(23, 107, 91, 0.05), transparent 38%),
+    radial-gradient(circle at 85% 25%, rgba(62, 111, 143, 0.04), transparent 38%),
+    radial-gradient(circle at 50% 100%, rgba(183, 121, 31, 0.025), transparent 45%);
+  background-attachment: fixed;
   color: #17202A;
   font-family: var(--font-sans);
   overflow-x: hidden;
@@ -119,14 +124,6 @@ code, pre, .font-mono {
   overflow-wrap: anywhere;
   word-break: break-word;
   min-width: 0;
-}
-
-/* Subtle civic grid pattern */
-.bg-civic-grid {
-  background-size: 32px 32px;
-  background-image: 
-    linear-gradient(to right, rgba(221, 226, 231, 0.4) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(221, 226, 231, 0.4) 1px, transparent 1px);
 }
 
 /* Print Styles for Official Case Dossier */

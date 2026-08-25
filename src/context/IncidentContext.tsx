@@ -10,9 +10,10 @@ import {
   IncidentCase,
   NivaranToolResult,
   NotificationItem,
+  TimelineSourceLabel,
   TransactionDetail
 } from '../types';
-import { DEMO_USER, INITIAL_DEMO_CASES, DEMO_NOTIFICATIONS } from '../services/mockData';
+import { DEMO_USER, INITIAL_DEMO_CASES, DEMO_NOTIFICATIONS, DEMO_CASE_1, DEMO_CASE_2, DEMO_CASE_3 } from '../services/mockData';
 import { analyzeIncident, generateActionPlan } from '../services/incidentAnalysisEngine';
 import { calculateCaseReadiness } from '../services/caseReadinessEngine';
 import { evaluateEvidenceConsistency, ConsistencyCheckResult } from '../services/evidenceConsistencyEngine';
@@ -49,7 +50,17 @@ interface IncidentContextType {
   activeCaseId: string;
   activeCase: IncidentCase;
   selectCase: (caseId: string) => void;
+  deleteCase: (caseId: string) => void;
   submitNewCaseFromDraft: () => string; // returns created caseId
+  
+  // Demo Scenarios Management
+  hasActiveDemoSession: boolean;
+  activeDemoScenario: 'electricity' | 'airline' | 'telegram' | null;
+  loadDemoScenario: (scenario: 'electricity' | 'airline' | 'telegram') => void;
+  loadDemoElectricityScenario: () => void;
+  loadDemoAirlineScenario: () => void;
+  loadDemoTelegramScenario: () => void;
+  clearActiveDemoSession: () => void;
 
   // Live Case Intelligence
   caseReadiness: CaseReadiness;
@@ -99,18 +110,19 @@ const initialDraftState: DraftIncidentData = {
     name: '',
     phone: '',
     email: '',
-    city: '',
-    state: ''
+    city: 'Bengaluru',
+    state: 'Karnataka'
   },
   isDirty: false
 };
 
 const IncidentContext = createContext<IncidentContextType | undefined>(undefined);
 
-const CASES_STORAGE_KEY = 'nivaran_cases_v3';
-const USER_STORAGE_KEY = 'nivaran_auth_user_v3';
-const DRAFT_STORAGE_KEY = 'nivaran_draft_incident_v3';
-const NOTIFS_STORAGE_KEY = 'nivaran_notifs_v3';
+const CASES_STORAGE_KEY = 'nivaran_cases_v5';
+const USER_STORAGE_KEY = 'nivaran_auth_user_v5';
+const DRAFT_STORAGE_KEY = 'nivaran_draft_incident_v5';
+const NOTIFS_STORAGE_KEY = 'nivaran_notifs_v5';
+const DEMO_SESSION_KEY = 'nivaran_demo_active_v5';
 
 export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // 1. Auth State
@@ -137,6 +149,16 @@ export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [activeCaseId, setActiveCaseId] = useState<string>(() => {
     return cases[0]?.caseId || 'NVR-2026-00124';
   });
+
+  // Demo Session Flag (user requested: show demo card on home only if user clicked run demo or created case)
+  const [hasActiveDemoSession, setHasActiveDemoSession] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(DEMO_SESSION_KEY) === 'true';
+    } catch {}
+    return false;
+  });
+
+  const [activeDemoScenario, setActiveDemoScenario] = useState<'electricity' | 'airline' | 'telegram' | null>('electricity');
 
   // 3. Draft Incident State
   const [draftIncident, setDraftIncident] = useState<DraftIncidentData>(() => {
@@ -185,6 +207,12 @@ export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       localStorage.setItem(NOTIFS_STORAGE_KEY, JSON.stringify(notifications));
     } catch {}
   }, [notifications]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(DEMO_SESSION_KEY, String(hasActiveDemoSession));
+    } catch {}
+  }, [hasActiveDemoSession]);
 
   // Derived Active Case
   const activeCase = cases.find(c => c.caseId === activeCaseId) || cases[0] || INITIAL_DEMO_CASES[0];
@@ -240,30 +268,81 @@ export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Case Selection
   const selectCase = (caseId: string) => {
     setActiveCaseId(caseId);
+    setHasActiveDemoSession(true);
     setActiveTab('case_details');
   };
 
-  // External Reference Management
+  const deleteCase = (caseId: string) => {
+    setCases(prev => {
+      const remaining = prev.filter(c => c.caseId !== caseId);
+      if (remaining.length === 0) {
+        return [DEMO_CASE_1];
+      }
+      return remaining;
+    });
+    if (activeCaseId === caseId) {
+      const nextRemaining = cases.filter(c => c.caseId !== caseId);
+      setActiveCaseId(nextRemaining[0]?.caseId || DEMO_CASE_1.caseId);
+    }
+    setActiveTab('dashboard');
+  };
+
+  // Demo Scenarios Handlers
+  const loadDemoScenario = (scenario: 'electricity' | 'airline' | 'telegram') => {
+    setActiveDemoScenario(scenario);
+    setHasActiveDemoSession(true);
+    if (scenario === 'electricity') {
+      setCases(prev => [DEMO_CASE_1, ...prev.filter(c => c.caseId !== DEMO_CASE_1.caseId)]);
+      setActiveCaseId(DEMO_CASE_1.caseId);
+    } else if (scenario === 'airline') {
+      setCases(prev => [DEMO_CASE_2, ...prev.filter(c => c.caseId !== DEMO_CASE_2.caseId)]);
+      setActiveCaseId(DEMO_CASE_2.caseId);
+    } else if (scenario === 'telegram') {
+      setCases(prev => [DEMO_CASE_3, ...prev.filter(c => c.caseId !== DEMO_CASE_3.caseId)]);
+      setActiveCaseId(DEMO_CASE_3.caseId);
+    }
+  };
+
+  const loadDemoElectricityScenario = () => {
+    loadDemoScenario('electricity');
+    setActiveTab('case_details');
+  };
+
+  const loadDemoAirlineScenario = () => {
+    loadDemoScenario('airline');
+    setActiveTab('case_details');
+  };
+
+  const loadDemoTelegramScenario = () => {
+    loadDemoScenario('telegram');
+    setActiveTab('case_details');
+  };
+
+  const clearActiveDemoSession = () => {
+    setHasActiveDemoSession(false);
+  };
+
+  // External References & Responses
   const addExternalReference = (caseId: string, refData: Omit<ExternalReference, 'id' | 'lastUpdated'>) => {
     const newRef: ExternalReference = {
       ...refData,
       id: `ref-${Date.now()}`,
-      lastUpdated: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+      lastUpdated: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + ', ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
     };
 
     setCases(prev => prev.map(c => {
       if (c.caseId === caseId) {
         const updatedRefs = [...c.externalReferences, newRef];
         const newTimelineEvent = {
-          id: `tl-ref-${Date.now()}`,
+          id: `tl-${Date.now()}`,
           timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-          title: `External Reference Added: ${refData.authorityName} (${refData.referenceNumber})`,
-          description: `Status: ${refData.statusDisplay}. Recorded under case file.`,
-          actor: 'authority' as const,
-          source: 'User entered external reference',
+          title: `External Reference Added (${refData.authorityName})`,
+          description: `Complaint reference ${refData.referenceNumber} recorded for tracking with status: ${refData.statusDisplay}.`,
+          actor: 'victim' as const,
+          source: `${refData.authorityName} (${refData.referenceNumber})`,
+          sourceLabel: 'EXTERNAL RESPONSE' as TimelineSourceLabel,
           urgency: 'info' as const
         };
-
         return {
           ...c,
           externalReferences: updatedRefs,
@@ -274,11 +353,10 @@ export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return c;
     }));
 
-    // Notification
     const notif: NotificationItem = {
       id: `notif-${Date.now()}`,
-      title: `Reference ${refData.referenceNumber} Attached to Case`,
-      message: `${refData.authorityName} complaint reference is now tracked in your case dossier.`,
+      title: `Reference Added: ${refData.referenceNumber}`,
+      message: `Recorded ${refData.authorityName} reference ${refData.referenceNumber} into case ${caseId}.`,
       timestamp: 'Just now',
       read: false,
       type: 'status_change',
@@ -300,7 +378,6 @@ export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }));
   };
 
-  // Case Response Management (Response Interpreter)
   const addCaseResponse = (caseId: string, responseData: Omit<CaseResponse, 'id'>) => {
     const newResponse: CaseResponse = {
       ...responseData,
@@ -309,39 +386,38 @@ export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     setCases(prev => prev.map(c => {
       if (c.caseId === caseId) {
-        const updatedResponses = [...c.responses, newResponse];
+        const updatedResponses = [newResponse, ...c.responses];
         const newTimelineEvent = {
-          id: `tl-resp-${Date.now()}`,
+          id: `tl-${Date.now()}`,
           timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
           title: `Response Received from ${responseData.responder}`,
-          description: responseData.decision,
+          description: `${responseData.decision}. Reason: ${responseData.reason}`,
           actor: 'bank' as const,
-          source: 'Imported from bank / authority response',
+          source: responseData.responder,
+          sourceLabel: 'EXTERNAL RESPONSE' as TimelineSourceLabel,
           urgency: 'warning' as const
         };
-
         return {
           ...c,
           responses: updatedResponses,
           timeline: [...c.timeline, newTimelineEvent],
+          updatedAt: new Date().toISOString(),
           nextAction: {
-            title: responseData.potentialNextAction,
-            why: responseData.plainSummary,
-            actionLabel: 'Escalate to Next Level',
-            actionTab: 'escalation',
-            urgency: 'high_now' as const
-          },
-          updatedAt: new Date().toISOString()
+            title: `Review ${responseData.responder} Response & Escalate`,
+            why: responseData.potentialNextAction,
+            actionLabel: 'Review Escalation Route',
+            actionTab: 'responses',
+            urgency: 'critical_now'
+          }
         };
       }
       return c;
     }));
 
-    // Notification
     const notif: NotificationItem = {
       id: `notif-${Date.now()}`,
-      title: `Response Interpreted from ${responseData.responder}`,
-      message: responseData.decision,
+      title: `Authority Response Logged`,
+      message: `${responseData.responder} decision recorded: ${responseData.decision}.`,
       timestamp: 'Just now',
       read: false,
       type: 'response_alert',
@@ -350,13 +426,38 @@ export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setNotifications(prev => [notif, ...prev]);
   };
 
-  // Resolve Evidence Conflict
   const resolveEvidenceConflict = (caseId: string, conflictId: string, resolutionNote: string) => {
     setCases(prev => prev.map(c => {
       if (c.caseId === caseId) {
+        const updatedConflicts = (c.conflicts || []).map(conf => {
+          if (conf.id === conflictId) {
+            return {
+              ...conf,
+              status: 'resolved' as const,
+              resolutionNote
+            };
+          }
+          return conf;
+        });
+
+        const newTimeline = [
+          ...c.timeline,
+          {
+            id: `tl-${Date.now()}`,
+            timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+            title: 'Evidence Conflict Resolved',
+            description: `Conflict on ${conflictId} resolved by user: ${resolutionNote}`,
+            actor: 'victim' as const,
+            source: 'User confirmation',
+            sourceLabel: 'USER CONFIRMED' as TimelineSourceLabel,
+            urgency: 'info' as const
+          }
+        ];
+
         return {
           ...c,
-          conflicts: c.conflicts.map(conf => conf.id === conflictId ? { ...conf, status: 'resolved', resolutionNote } : conf),
+          conflicts: updatedConflicts,
+          timeline: newTimeline,
           updatedAt: new Date().toISOString()
         };
       }
@@ -364,107 +465,71 @@ export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }));
   };
 
-  // Mini Tool Result Injection into Case
   const addToolResultToCase = (caseId: string, toolResult: NivaranToolResult) => {
     setCases(prev => prev.map(c => {
       if (c.caseId === caseId) {
-        const updatedSuspects = [...c.suspects];
-        const updatedEvidence = [...c.evidence];
-        const updatedTransactions = [...c.transactions];
-
-        // 1. If tool extracted a suspect identifier (UPI, phone, URL)
-        if (toolResult.extractedData?.upiId && !updatedSuspects.some(s => s.value.toLowerCase() === toolResult.extractedData!.upiId!.toLowerCase())) {
-          updatedSuspects.push({
-            id: `susp-${Date.now()}`,
-            type: 'upi_id',
-            value: toolResult.extractedData.upiId,
-            source: toolResult.toolName,
-            matchingReportsCount: toolResult.verdict === 'HIGH_RISK_ALERT' ? 17 : 0,
-            notes: toolResult.summary
-          });
-        }
-
-        if (toolResult.extractedData?.phoneNumber && !updatedSuspects.some(s => s.value.includes(toolResult.extractedData!.phoneNumber!))) {
-          updatedSuspects.push({
-            id: `susp-ph-${Date.now()}`,
-            type: 'phone_number',
-            value: toolResult.extractedData.phoneNumber,
-            source: toolResult.toolName,
-            notes: toolResult.summary
-          });
-        }
-
-        if (toolResult.extractedData?.url && !updatedSuspects.some(s => s.value.includes(toolResult.extractedData!.url!))) {
-          updatedSuspects.push({
-            id: `susp-url-${Date.now()}`,
-            type: 'website_url',
-            value: toolResult.extractedData.url,
-            source: toolResult.toolName,
-            notes: toolResult.summary
-          });
-        }
-
-        // 2. If tool parsed a transaction (SMS parser)
-        if (toolResult.toolId === 'sms_parser' && toolResult.extractedData?.amount) {
-          updatedTransactions.push({
-            id: `tx-${Date.now()}`,
-            amount: toolResult.extractedData.amount,
-            currency: 'INR',
-            timestamp: new Date().toISOString().slice(0, 16).replace('T', ' '),
-            senderBank: toolResult.extractedData.bank || 'HDFC Bank',
-            senderAccountMasked: toolResult.extractedData.senderAccountMasked || '9104',
-            recipientUpiOrAcc: toolResult.extractedData.upiId || 'discom.billupdate.982@okaxis',
-            utrNumber: toolResult.extractedData.utrNumber || '423719820491',
-            paymentApp: 'Google Pay',
-            paymentMethod: 'UPI',
-            notes: 'Imported from Bank SMS Parser'
-          });
-        }
-
-        // 3. Attach as Evidence Item
-        updatedEvidence.push({
+        const isCritical = (toolResult.verdict as string) === 'REPORTED_IN_NIVARAN' || toolResult.verdict === 'HIGH_RISK_ALERT' || toolResult.verdict === 'POTENTIAL_RISK_SIGNALS';
+        const newEvidence: EvidenceItem = {
           id: `ev-tool-${Date.now()}`,
-          type: toolResult.toolId === 'sms_parser' ? 'sms_text' : toolResult.toolId === 'qr_check' ? 'qr_code' : 'url_link',
-          title: `${toolResult.toolName} Result`,
-          description: toolResult.summary,
-          timestamp: toolResult.timestamp,
-          source: `Nivaran Tool (${toolResult.toolName})`,
+          type: 'tool_output',
+          title: `Tool Finding: ${toolResult.toolName}`,
+          description: `Analysis result for query: "${toolResult.query}". Summary: ${toolResult.summary}`,
+          timestamp: new Date().toISOString().slice(0, 16).replace('T', ' '),
+          source: toolResult.toolName,
+          sourceTypeLabel: 'CASE TOOL',
           status: 'verified',
-          relevance: 'critical',
-          extractedData: toolResult.extractedData
-        });
+          relevance: isCritical ? 'critical' : 'supporting',
+          extractedData: {
+            upiId: toolResult.toolId === 'upi_check' ? toolResult.query : undefined,
+            phone: toolResult.toolId === 'phone_check' ? toolResult.query : undefined,
+            url: toolResult.toolId === 'url_check' ? toolResult.query : undefined
+          }
+        };
 
-        // 4. Add Timeline Event with source attribution
-        const timelineEvent = {
+        const newTimelineEvent = {
           id: `tl-tool-${Date.now()}`,
           timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
           title: `Intelligence Added from ${toolResult.toolName}`,
           description: toolResult.summary,
           actor: 'system' as const,
-          source: `From ${toolResult.toolName}`,
+          source: toolResult.toolName,
+          sourceLabel: 'DOCUMENT EXTRACTED' as TimelineSourceLabel,
           urgency: 'info' as const
         };
 
-        const updatedCampaign = findMatchingCampaign(updatedSuspects);
+        const newSuspect = toolResult.toolId === 'upi_check' ? {
+          id: `susp-${Date.now()}`,
+          type: 'upi_id' as const,
+          value: toolResult.query,
+          source: toolResult.toolName,
+          sourceTypeLabel: 'CASE TOOL' as const,
+          matchingReportsCount: isCritical ? 17 : 0,
+          notes: toolResult.summary
+        } : toolResult.toolId === 'phone_check' ? {
+          id: `susp-${Date.now()}`,
+          type: 'phone_number' as const,
+          value: toolResult.query,
+          source: toolResult.toolName,
+          sourceTypeLabel: 'CASE TOOL' as const,
+          matchingReportsCount: isCritical ? 17 : 0,
+          notes: toolResult.summary
+        } : null;
 
         return {
           ...c,
-          suspects: updatedSuspects,
-          evidence: updatedEvidence,
-          transactions: updatedTransactions,
-          timeline: [...c.timeline, timelineEvent],
-          connectedCampaign: updatedCampaign || c.connectedCampaign,
+          evidence: [...c.evidence, newEvidence],
+          timeline: [...c.timeline, newTimelineEvent],
+          suspects: newSuspect ? [...c.suspects, newSuspect] : c.suspects,
           updatedAt: new Date().toISOString()
         };
       }
       return c;
     }));
 
-    // Notification
     const notif: NotificationItem = {
       id: `notif-${Date.now()}`,
-      title: `Intelligence Attached: ${toolResult.toolName}`,
-      message: `Extracted parameters from ${toolResult.toolName} have been added to Case ${caseId}.`,
+      title: `Tool Intelligence Attached`,
+      message: `Findings from ${toolResult.toolName} attached to Case ${caseId}.`,
       timestamp: 'Just now',
       read: false,
       type: 'evidence_alert',
@@ -546,7 +611,6 @@ export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const nowIso = new Date().toISOString();
     const nowReadable = `${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} · ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`;
 
-    // Run deterministic analysis
     const analysis = analyzeIncident({
       category: draftIncident.category,
       whatHappened: draftIncident.whatHappenedSummary,
@@ -560,23 +624,23 @@ export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       analysis
     );
 
-    // Build timeline events from transactions with clear source
     const timelineEvents = draftIncident.transactions.map((tx, idx) => ({
       id: `tl-gen-${idx}`,
       timestamp: tx.timestamp ? tx.timestamp.slice(11, 16) || '10:00 AM' : '10:00 AM',
-      title: `INR ${tx.amount.toLocaleString('en-IN')} debited via ${tx.paymentMethod}`,
+      title: `INR ${tx.amount.toLocaleString('en-IN')} transferred via ${tx.paymentMethod}`,
       description: `Debited from ${tx.senderBank} to ${tx.recipientUpiOrAcc}. UTR: ${tx.utrNumber || 'Pending'}`,
       actor: 'victim' as const,
-      source: 'From user entered transaction details',
+      source: tx.source || 'Payment evidence extraction',
+      sourceLabel: 'DOCUMENT EXTRACTED' as TimelineSourceLabel,
       urgency: 'critical' as const
     }));
 
-    // Build suspects from recipient VPAs
     const suspects = draftIncident.transactions.map((tx, i) => ({
       id: `susp-gen-${i}`,
       type: 'upi_id' as const,
       value: tx.recipientUpiOrAcc,
-      source: 'Transaction Details',
+      source: 'Extracted Transaction',
+      sourceTypeLabel: 'OCR EXTRACTED' as const,
       matchingReportsCount: tx.recipientUpiOrAcc.includes('discom.billupdate') ? 17 : 0,
       notes: `Beneficiary handle for transaction #${i + 1}`
     }));
@@ -591,8 +655,8 @@ export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       isDemo: false,
       statusProgress: 'incident_reported',
       nextAction: {
-        title: 'Call 1930 and Notify Your Bank Fraud Cell',
-        why: 'Quoting your 12-digit UTR immediately to 1930 enables an inter-bank lien to freeze funds before recipient withdrawal.',
+        title: 'Call 1930 & Notify Debiting Bank with UTR',
+        why: 'Quoting your 12-digit UTR immediately to 1930 enables an inter-bank lien to freeze funds before recipient cash-out.',
         actionLabel: 'View Emergency 1930 Script',
         actionTab: 'actions',
         urgency: 'critical_now'
@@ -648,7 +712,7 @@ export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       connectedCampaign,
       escalationLadder: generateGenericEscalationLadder(draftIncident.transactions[0]?.senderBank || 'HDFC Bank'),
       category: draftIncident.category,
-      whatHappenedSummary: draftIncident.whatHappenedSummary || 'Incident submitted via NIVARAN intake wizard.',
+      whatHappenedSummary: draftIncident.whatHappenedSummary || 'Incident organized via Nivaran evidence-first intake.',
       complainant: {
         name: draftIncident.complainant.name || user?.name || 'Citizen Complainant',
         phone: draftIncident.complainant.phone || user?.phone || '',
@@ -667,7 +731,9 @@ export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           recipientUpiOrAcc: 'discom.billupdate.982@okaxis',
           utrNumber: '423719820491',
           paymentApp: 'Google Pay',
-          paymentMethod: 'UPI'
+          paymentMethod: 'UPI',
+          source: 'USER ENTERED',
+          confidence: 'medium'
         }
       ],
       evidence: draftIncident.evidence,
@@ -678,7 +744,8 @@ export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           title: 'Unauthorized Transaction Executed',
           description: 'Funds debited from primary account under deceptive circumstances.',
           actor: 'victim',
-          source: 'From user description',
+          source: 'User description',
+          sourceLabel: 'USER REPORTED',
           urgency: 'critical'
         }
       ],
@@ -689,11 +756,12 @@ export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     setCases(prev => [newCase, ...prev]);
     setActiveCaseId(newCaseId);
+    setHasActiveDemoSession(true);
 
     const newNotif: NotificationItem = {
       id: `notif-${Date.now()}`,
-      title: `Case ${newCaseId} Created Successfully`,
-      message: `Your incident report has been registered. Next step: Call 1930 with UTR ${newCase.transactions[0]?.utrNumber || 'details'}.`,
+      title: `Case ${newCaseId} Initialized`,
+      message: `Your fraud case has been created. Next action: Call 1930 with 12-digit UTR ${newCase.transactions[0]?.utrNumber || 'details'}.`,
       timestamp: nowReadable,
       read: false,
       type: 'status_change',
@@ -761,7 +829,16 @@ export const IncidentProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         activeCaseId,
         activeCase,
         selectCase,
+        deleteCase,
         submitNewCaseFromDraft,
+
+        hasActiveDemoSession,
+        activeDemoScenario,
+        loadDemoScenario,
+        loadDemoElectricityScenario,
+        loadDemoAirlineScenario,
+        loadDemoTelegramScenario,
+        clearActiveDemoSession,
 
         caseReadiness,
         consistencyResult,

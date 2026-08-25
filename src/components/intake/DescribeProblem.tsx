@@ -5,13 +5,16 @@ import {
   ArrowRight,
   Check,
   CheckCircle,
+  FolderOpen,
   HelpCircle,
   Info,
   ShieldAlert,
-  Sparkles
+  Sparkles,
+  Zap
 } from 'lucide-react';
 import { useIncident } from '../../context/IncidentContext';
 import { analyzeIncident } from '../../services/incidentAnalysisEngine';
+import { FraudCategory } from '../../types';
 
 export const DescribeProblem: React.FC = () => {
   const { draftIncident, updateDraft, setIntakeStep } = useIncident();
@@ -20,6 +23,38 @@ export const DescribeProblem: React.FC = () => {
   const textValue = draftIncident.whatHappenedSummary || '';
   const charCount = textValue.length;
   const maxChars = 2000;
+
+  // Test Case Presets for quick selection (User requirement #9)
+  const testCasePresets: { label: string; category: FraudCategory; text: string }[] = [
+    {
+      label: '⚡ Electricity Bill Threat (₹18,500)',
+      category: 'upi_fraud',
+      text: 'I received an urgent call at 10:15 AM from +91 70192 84920 claiming to be a state electricity board (BESCOM) official. He stated my electricity connection would be disconnected at 11:00 AM due to an unpaid bill and instructed me to pay a ₹15 verification charge on Google Pay. When I authorized the payment, ₹18,500 was debited to VPA discom.billupdate.982@okaxis with UTR 423719820491.'
+    },
+    {
+      label: '📞 Fake Airline Helpdesk (₹7,200)',
+      category: 'fake_customer_care',
+      text: 'I searched for airline flight customer support on Google and called the number +91 91203 94812. The agent asked me to open PhonePe to receive my flight refund. He sent a UPI collect request of ₹7,200 and told me to enter my PIN to accept the credit. The money was deducted from my SBI account instead.'
+    },
+    {
+      label: '💼 Telegram Task Rating Scam (₹65,000)',
+      category: 'investment_fraud',
+      text: 'I was added to a Telegram group offering part-time daily income for rating hotels on Google Maps. I initially deposited ₹5,000 and received ₹6,500 back. Then for VIP Level 3 tasks, I made two UPI transfers of ₹30,000 and ₹35,000 to merchant accounts. When I attempted to withdraw my balance, withdrawals were frozen.'
+    },
+    {
+      label: '⚖️ Digital Arrest / Customs Coercion',
+      category: 'digital_arrest',
+      text: 'Received an automated call stating a parcel in my name was seized by Mumbai Customs containing passports and narcotics. Transferred to a caller claiming to be a CBI Inspector on Skype video call. Under extreme fear of immediate arrest, I transferred funds to a verification escrow account.'
+    }
+  ];
+
+  const handleApplyPreset = (preset: { category: FraudCategory; text: string }) => {
+    updateDraft({
+      category: preset.category,
+      whatHappenedSummary: preset.text
+    });
+    setErrorMsg(null);
+  };
 
   // Live preliminary heuristic analysis preview
   const liveAnalysis = analyzeIncident({
@@ -40,22 +75,20 @@ export const DescribeProblem: React.FC = () => {
       signals.push({ label: 'Service Claimed', value: 'Airline / Courier Customer Care Refund' });
     } else if (lower.includes('police') || lower.includes('customs') || lower.includes('cbi') || lower.includes('arrest')) {
       signals.push({ label: 'Authority Claimed', value: 'Law Enforcement / Digital Arrest Coercion' });
+    } else if (lower.includes('telegram') || lower.includes('hotel') || lower.includes('task') || lower.includes('rating')) {
+      signals.push({ label: 'Deception Mechanism', value: 'Telegram Part-Time Rating Task Fraud' });
     }
 
     if (lower.includes('15') || lower.includes('10') || lower.includes('nominal') || lower.includes('verification')) {
-      signals.push({ label: 'Deceptive Modus Operandi', value: 'Nominal ₹15 verification payment trick' });
+      signals.push({ label: 'Modus Operandi', value: 'Nominal verification payment bait' });
     }
 
     if (lower.includes('15 minute') || lower.includes('tonight') || lower.includes('urgent') || lower.includes('immediately')) {
-      signals.push({ label: 'Psychological Trigger', value: 'Artificial 15-minute deadline urgency' });
+      signals.push({ label: 'Psychological Trigger', value: 'Artificial deadline urgency' });
     }
 
-    if (lower.includes('qr') || lower.includes('barcode') || lower.includes('scan')) {
-      signals.push({ label: 'Technical Vector', value: 'QR Code / PIN for Credit Trick' });
-    }
-
-    if (lower.includes('anydesk') || lower.includes('quicksupport') || lower.includes('apk') || lower.includes('link')) {
-      signals.push({ label: 'Device Vector', value: 'Malicious Link / Remote Screen-Sharing Tool' });
+    if (lower.includes('collect') || lower.includes('pin to accept') || lower.includes('phonepe')) {
+      signals.push({ label: 'Technical Vector', value: 'UPI Collect Request deception' });
     }
 
     return signals;
@@ -76,7 +109,7 @@ export const DescribeProblem: React.FC = () => {
   const handleContinue = (e: React.FormEvent) => {
     e.preventDefault();
     if (!textValue.trim() || textValue.trim().length < 10) {
-      setErrorMsg('Please describe what happened before continuing. A few sentences are sufficient.');
+      setErrorMsg('Please describe what happened before continuing. A few sentences or selecting a preset is sufficient.');
       return;
     }
     setErrorMsg(null);
@@ -87,112 +120,97 @@ export const DescribeProblem: React.FC = () => {
     <form onSubmit={handleContinue} className="space-y-6">
       <div>
         <div className="text-xs font-mono font-bold text-brand-primary uppercase tracking-wider mb-1">
-          STEP 2 OF 5 &bull; INCIDENT STATEMENT & NATURAL LANGUAGE EXTRACTION
+          STEP 2 OF 5 &bull; INCIDENT STATEMENT &amp; PATTERN EXTRACTION
         </div>
         <h2 className="text-2xl font-display font-extrabold text-text-primary">
           Describe what happened
         </h2>
-        <p className="text-sm text-text-secondary mt-1">
-          Tell us the sequence of events in your own words. You don&apos;t need to know legal or cybersecurity terms — NIVARAN will extract structured parameters for official reporting.
+        <p className="text-sm text-text-secondary mt-1 font-sans">
+          Tell us the sequence of events in your own words, or choose a test case preset below to pre-fill realistic parameters.
         </p>
       </div>
 
       {errorMsg && (
-        <div className="p-3.5 rounded-lg bg-brand-red-soft border border-brand-red/30 text-xs text-brand-red flex items-start gap-2.5 animate-in fade-in">
+        <div className="p-3.5 rounded-lg bg-brand-red-soft border border-brand-red/30 text-xs text-brand-red flex items-start gap-2.5">
           <AlertCircle size={16} className="shrink-0 mt-0.5" />
           <span className="font-medium">{errorMsg}</span>
         </div>
       )}
 
-      {/* Main Narrative Textarea */}
-      <div className="p-5 rounded-card bg-surface border border-surface-border shadow-subtle space-y-3">
+      {/* Manual Test Case Presets Selector (Specification requirement) */}
+      <div className="p-4 rounded-card bg-surface border border-surface-border shadow-subtle space-y-2.5">
         <div className="flex items-center justify-between">
-          <label htmlFor="incident-narrative" className="block text-xs font-bold text-text-primary uppercase tracking-wide">
-            Your Incident Statement *
+          <span className="text-xs font-mono font-bold text-text-primary uppercase flex items-center gap-1.5">
+            <Sparkles size={13} className="text-brand-primary" />
+            <span>Select a Test Scenario Preset:</span>
+          </span>
+          <span className="text-[10px] font-mono text-text-muted">1-Click Auto-Fill</span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {testCasePresets.map((preset, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => handleApplyPreset(preset)}
+              className="p-2.5 rounded-lg bg-surface-subtle hover:bg-brand-soft border border-surface-border hover:border-brand-primary/40 text-left transition-all text-xs flex items-center justify-between group"
+            >
+              <span className="font-bold text-text-primary group-hover:text-brand-primary truncate">
+                {preset.label}
+              </span>
+              <span className="text-[10px] font-mono text-brand-primary uppercase font-bold shrink-0 ml-2">
+                Use Preset &rarr;
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Written Narrative Text Area */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <label className="block text-xs font-bold text-text-primary uppercase tracking-wide">
+            Your Narrative Statement *
           </label>
-          <span className={`font-mono text-xs ${charCount > maxChars * 0.9 ? 'text-brand-amber font-bold' : 'text-text-muted'}`}>
+          <span className="text-[11px] font-mono text-text-muted">
             {charCount} / {maxChars} characters
           </span>
         </div>
 
         <textarea
-          id="incident-narrative"
+          rows={6}
           value={textValue}
           onChange={handleTextChange}
-          rows={7}
-          placeholder="Tell us what happened in your own words. For example:
-'I received a call from someone saying they were from my electricity board. They told me power will be disconnected in 15 minutes unless I update my bill. They sent a WhatsApp link and asked me to enter my UPI PIN to approve a 15-rupee verification credit. When I entered the PIN, ₹18,500 was debited immediately...'"
-          className="w-full bg-surface-subtle border border-surface-border rounded-lg p-4 text-sm text-text-primary placeholder:text-text-muted focus:bg-surface focus:border-brand-primary outline-none transition-all resize-y leading-relaxed font-sans"
+          placeholder="e.g. I received a phone call claiming my electricity bill was overdue. They asked me to transfer ₹15 verification fee via Google Pay, but ₹18,500 was debited instead..."
+          className="w-full bg-surface border border-surface-border rounded-lg p-4 text-xs text-text-primary placeholder:text-text-muted font-sans leading-relaxed focus:border-brand-primary outline-none shadow-subtle"
+          required
         />
-
-        <div className="flex items-center gap-1.5 text-xs text-text-muted pt-1">
-          <Info size={14} className="text-brand-blue shrink-0" />
-          <span>Write freely in plain language. Mention approximate amounts, phone numbers, and what the person asked you to do.</span>
-        </div>
       </div>
 
-      {/* Structured Extraction Preview */}
-      {textValue.trim().length >= 15 && (
-        <div className="p-5 rounded-card bg-surface-elevated border border-brand-primary/25 space-y-4 animate-in fade-in shadow-subtle">
-          <div className="flex items-center justify-between border-b border-surface-border/60 pb-2.5">
-            <div className="flex items-center gap-2">
-              <Sparkles size={15} className="text-brand-primary" />
-              <span className="text-xs font-mono font-bold text-text-primary uppercase">
-                Preliminary Pattern Assessment
-              </span>
-            </div>
-            <span className="text-[11px] font-mono font-semibold text-brand-primary bg-brand-soft px-2 py-0.5 rounded border border-brand-primary/20">
-              Confidence: {liveAnalysis.confidence.toUpperCase()}
-            </span>
+      {/* Extracted Modus Operandi Signals Preview */}
+      {extractedSignals.length > 0 && (
+        <div className="p-4 rounded-card bg-surface-subtle border border-surface-border space-y-2 text-xs animate-in fade-in">
+          <div className="text-[11px] font-mono font-bold text-brand-primary uppercase flex items-center gap-1.5">
+            <Zap size={13} />
+            <span>Nivaran Extracted Scam Factors:</span>
           </div>
-
-          <div>
-            <div className="text-xs text-text-muted">Your description suggests:</div>
-            <div className="text-sm font-bold text-text-primary mt-0.5">
-              {liveAnalysis.likelyType}
-            </div>
-          </div>
-
-          {/* Mentioned Entities Extracted */}
-          {extractedSignals.length > 0 && (
-            <div className="space-y-2 pt-1 border-t border-surface-border/50">
-              <div className="text-[11px] font-mono text-text-muted uppercase">Extracted Case Signals:</div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
-                {extractedSignals.map((s, idx) => (
-                  <div key={idx} className="p-2.5 rounded bg-surface border border-surface-border space-y-0.5">
-                    <span className="text-text-muted text-[10px] uppercase block">{s.label}</span>
-                    <span className="font-bold text-text-primary">{s.value}</span>
-                  </div>
-                ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 font-mono text-[11px]">
+            {extractedSignals.map((sig, i) => (
+              <div key={i} className="p-2 rounded bg-surface border border-surface-border">
+                <span className="text-text-muted text-[10px] block">{sig.label}:</span>
+                <span className="font-bold text-text-primary">{sig.value}</span>
               </div>
-            </div>
-          )}
-
-          {/* Why Factors */}
-          <div className="space-y-1 text-xs text-text-secondary pt-1">
-            <div className="font-semibold text-text-primary font-sans">Why this pattern was identified:</div>
-            <ul className="space-y-1 pl-1">
-              {liveAnalysis.reasonFactors.slice(0, 3).map((factor, i) => (
-                <li key={i} className="flex items-start gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-brand-primary mt-1.5 shrink-0" />
-                  <span>{factor}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="pt-2 text-[11px] text-text-muted font-sans border-t border-surface-border/50">
-            * This is an automated preliminary pattern assessment to organize evidence. It does not represent judicial confirmation.
+            ))}
           </div>
         </div>
       )}
 
       {/* Navigation Buttons */}
-      <div className="flex justify-between items-center pt-4 border-t border-surface-border">
+      <div className="flex items-center justify-between pt-4 border-t border-surface-border">
         <button
           type="button"
           onClick={() => setIntakeStep(1)}
-          className="px-4 py-2.5 rounded-lg bg-surface hover:bg-surface-subtle text-text-secondary hover:text-text-primary border border-surface-border font-semibold text-xs transition-colors flex items-center gap-1.5"
+          className="px-4 py-2.5 rounded-lg border border-surface-border hover:bg-surface-subtle text-text-primary font-semibold text-xs transition-colors flex items-center gap-1.5"
         >
           <ArrowLeft size={14} />
           <span>Back to Category</span>
@@ -200,9 +218,9 @@ export const DescribeProblem: React.FC = () => {
 
         <button
           type="submit"
-          className="px-6 py-3 rounded-lg bg-brand-primary hover:bg-brand-hover text-white font-semibold text-xs transition-colors shadow-subtle flex items-center gap-2"
+          className="px-6 py-2.5 rounded-lg bg-brand-primary hover:bg-brand-hover text-white font-bold text-xs transition-colors shadow-subtle flex items-center gap-1.5"
         >
-          <span>Continue to Transaction Details</span>
+          <span>Continue to Evidence &amp; Extraction</span>
           <ArrowRight size={14} />
         </button>
       </div>

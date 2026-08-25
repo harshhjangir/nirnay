@@ -114,20 +114,27 @@ export const TrackCasePublic: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
           {/* Sample quick buttons */}
           <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="text-text-muted text-[11px]">Quick test:</span>
+            <span className="text-text-muted text-[11px] font-mono">Quick test:</span>
             <button
               type="button"
               onClick={() => loadSample('NVR-2026-00124', '9845192837')}
               className="px-2.5 py-1 rounded bg-surface-subtle hover:bg-surface-elevated border border-surface-border font-mono text-[11px] text-text-secondary"
             >
-              Case NVR-2026-00124
+              Demo 1: NVR-2026-00124 (₹18.5k)
             </button>
             <button
               type="button"
-              onClick={() => loadSample('NVR-2026-00089', '9845192837')}
+              onClick={() => loadSample('NVR-2026-00089', '9820144819')}
               className="px-2.5 py-1 rounded bg-surface-subtle hover:bg-surface-elevated border border-surface-border font-mono text-[11px] text-text-secondary"
             >
-              Case NVR-2026-00089
+              Demo 2: NVR-2026-00089 (₹7.2k)
+            </button>
+            <button
+              type="button"
+              onClick={() => loadSample('NVR-2026-00052', '9711239182')}
+              className="px-2.5 py-1 rounded bg-surface-subtle hover:bg-surface-elevated border border-surface-border font-mono text-[11px] text-text-secondary"
+            >
+              Demo 3: NVR-2026-00052 (₹65k)
             </button>
           </div>
 
@@ -168,7 +175,7 @@ export const TrackCasePublic: React.FC = () => {
           {/* Step Timeline Progress */}
           <div className="space-y-3">
             <div className="text-xs font-mono font-bold text-text-primary uppercase tracking-wide">
-              Investigation & Escalation Timeline:
+              Investigation &amp; Escalation Timeline:
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5 text-xs font-mono">
